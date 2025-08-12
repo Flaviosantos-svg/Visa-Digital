@@ -1,0 +1,63 @@
+{% extends 'admin_base.html' %}
+{% block title %}Vistorias Realizadas{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Vistorias Realizadas</h1>
+        <a href="{{ url_for('registrar_nova_vistoria') }}" class="btn btn-primary shadow-sm">
+            <i class="fas fa-plus fa-sm text-white-50"></i> Registrar Nova Vistoria
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Histórico de Vistorias</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Protocolo</th>
+                            <th>Empresa/Autônomo</th>
+                            <th>Data</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if vistorias %}
+                            {% for vistoria in vistorias %}
+                            <tr>
+                                <td>{{ vistoria.protocolo_vistoria }}</td>
+                                <td>
+                                    {% if vistoria.empresa %}
+                                        {{ vistoria.empresa.nome_fantasia or vistoria.empresa.razao_social }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
+                                <td>{{ vistoria.data_vistoria.strftime('%d/%m/%Y') }}</td>
+                                <td>
+                                    <span class="badge bg-info">{{ vistoria.status_analise }}</span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('admin_detalhe_vistoria', vistoria_id=vistoria.id) }}" class="btn btn-info btn-sm" title="Ver Detalhes">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center">Nenhuma vistoria registrada ainda.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

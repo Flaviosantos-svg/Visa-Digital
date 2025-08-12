@@ -1,0 +1,45 @@
+{% extends 'admin_base.html' %}
+{% block title %}Gerenciar Irregularidades Sanitárias{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Irregularidades Sanitárias</h1>
+        <a href="{{ url_for('admin_nova_irregularidade') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Cadastrar Nova Irregularidade
+        </a>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-body">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Irregularidade Comum</th>
+                        <th>Infração (Base Legal)</th>
+                        <th style="width: 15%;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in irregularidades %}
+                    <tr>
+                        <td>{{ item.nome }}</td>
+                        <td>{{ item.infracao }}</td>
+                        <td>
+                            <a href="{{ url_for('admin_editar_irregularidade', irregularidade_id=item.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                            <form action="{{ url_for('admin_deletar_irregularidade', irregularidade_id=item.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Tem certeza de que deseja excluir esta irregularidade?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3" class="text-center">Nenhuma irregularidade cadastrada.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

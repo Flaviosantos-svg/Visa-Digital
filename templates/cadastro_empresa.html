@@ -1,0 +1,160 @@
+{% extends 'layout.html' %}
+
+{% block title %}Cadastro de Empresa - VISA Digital{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <h2>Formulário de Cadastro de Empresa</h2>
+    <p>Digite um CNPJ válido e aguarde o preenchimento automático dos dados públicos da empresa.</p>
+
+    <form id="form-cadastro" method="POST" action="{{ url_for('cadastro_empresa') }}">
+        
+        <fieldset class="border p-3 mb-4 rounded">
+            <legend class="w-auto px-2 h6">Dados da Empresa</legend>
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="cnpj" class="form-label">CNPJ</label>
+                    <input type="text" class="form-control" id="cnpj" name="cnpj" placeholder="Digite o CNPJ e saia do campo" required>
+                    <div id="cnpj-status" class="form-text"></div>
+                </div>
+                <div class="col-md-8 mb-3">
+                    <label for="razao_social" class="form-label">Razão Social</label>
+                    <input type="text" class="form-control" id="razao_social" name="razao_social" readonly>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="nome_fantasia" class="form-label">Nome Fantasia</label>
+                    <input type="text" class="form-control" id="nome_fantasia" name="nome_fantasia" readonly>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="porte" class="form-label">Porte</label>
+                    <input type="text" class="form-control" id="porte" name="porte" readonly>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="data_abertura" class="form-label">Data de Abertura</label>
+                    <input type="text" class="form-control" id="data_abertura" name="data_abertura" readonly>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="situacao_cadastral" class="form-label">Situação Cadastral</label>
+                <input type="text" class="form-control" id="situacao_cadastral" name="situacao_cadastral" readonly>
+            </div>
+            
+            <div class="mb-3">
+                <label for="cnae_principal" class="form-label">CNAE Principal</label>
+                <input type="text" class="form-control" id="cnae_principal" name="cnae_principal" readonly>
+            </div>
+
+            <div class="mb-3">
+                <label for="categoria" class="form-label">Categoria da Empresa</label>
+                <select class="form-select" id="categoria" name="categoria" required>
+                    <option value="" disabled selected>-- Selecione uma categoria --</option>
+                    <option value="alimentos">Alimentos</option>
+                    <option value="saude">Serviços de Saúde</option>
+                    <option value="beleza_estetica">Beleza e Estética</option>
+                    <option value="educacao">Educação</option>
+                    <option value="outros_servicos">Outros Serviços</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="cnae_secundario" class="form-label">CNAEs Secundários</label>
+                <textarea class="form-control" id="cnae_secundario" name="cnae_secundario" rows="4" readonly></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="endereco" class="form-label">Endereço Completo</label>
+                <input type="text" class="form-control" id="endereco" name="endereco" readonly>
+            </div>
+            
+            <div class="mb-3">
+                <label for="telefone_empresa" class="form-label">Telefone da Empresa (Editável)</label>
+                <input type="text" class="form-control" id="telefone_empresa" name="telefone_empresa">
+            </div>
+        </fieldset>
+
+        <fieldset class="border p-3 mb-4 rounded">
+            <legend class="w-auto px-2 h6">Responsáveis e Horários</legend>
+
+            <p class="fw-bold">Responsável Jurídico</p>
+            <div class="row">
+                <div class="col-md-6 mb-3"><input type="text" class="form-control" name="responsavel_juridico_nome" placeholder="Nome completo" required></div>
+                <div class="col-md-3 mb-3"><input type="text" class="form-control" name="responsavel_juridico_cpf" placeholder="CPF" required></div>
+                <div class="col-md-3 mb-3"><input type="text" class="form-control" name="responsavel_juridico_tel" placeholder="Telefone" required></div>
+            </div>
+
+            <p class="fw-bold mt-3">Contador Responsável</p>
+            <div class="row">
+                <div class="col-md-6 mb-3"><input type="text" class="form-control" name="contador_nome" placeholder="Nome completo"></div>
+                <div class="col-md-3 mb-3"><input type="text" class="form-control" name="contador_cpf" placeholder="CPF"></div>
+                <div class="col-md-3 mb-3"><input type="text" class="form-control" name="contador_tel" placeholder="Telefone"></div>
+            </div>
+
+            <div class="mt-3">
+                <label class="form-label fw-bold">Horário de Funcionamento</label>
+                
+                {% set dias_semana = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"] %}
+                {% for dia in dias_semana %}
+                <div class="row mb-2">
+                    <div class="col-md-3">
+                        <label for="horario_{{ dia|lower|replace('-', '_') }}" class="form-label">{{ dia }}</label>
+                    </div>
+                    <div class="col-md-9">
+                <input type="text" class="form-control" 
+                       id="horario_{{ dia|lower|replace('-', '_') }}" 
+                       name="horario_{{ dia|lower|replace('-', '_') }}"
+                       placeholder="Ex: 08:00-18:00 ou Fechado">
+                    </div>
+                </div>
+                {% endfor %}
+
+                <div class="mb-3 mt-3">
+                    <label class="form-label d-block">A empresa funciona em feriados?</label>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="funciona_feriado" id="feriado_sim" value="sim">
+                        <label class="form-check-label" for="feriado_sim">Sim</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="funciona_feriado" id="feriado_nao" value="nao" checked>
+                        <label class="form-check-label" for="feriado_nao">Não</label>
+                    </div>
+                </div>
+
+                <div class="mb-3" id="horario_feriado_div" style="display: none;">
+                    <label for="horario_feriado" class="form-label">Qual o horário de funcionamento em feriados?</label>
+                    <input type="text" class="form-control" id="horario_feriado" name="horario_feriado" placeholder="Ex: 09:00-14:00">
+                </div>
+            </div>
+        </fieldset>
+
+        <button type="submit" class="btn btn-primary btn-lg">Enviar Cadastro</button>
+    </form>
+</div>
+
+<script src="{{ url_for('static', filename='js/form_cadastro.js') }}"></script>
+<script>
+    // Script para mostrar/esconder o campo de horário de feriado
+    document.addEventListener('DOMContentLoaded', function() {
+        const feriadoSim = document.getElementById('feriado_sim');
+        const feriadoNao = document.getElementById('feriado_nao');
+        const horarioFeriadoDiv = document.getElementById('horario_feriado_div');
+
+        function toggleHorarioFeriado() {
+            if (feriadoSim.checked) {
+                horarioFeriadoDiv.style.display = 'block';
+            } else {
+                horarioFeriadoDiv.style.display = 'none';
+            }
+        }
+
+        feriadoSim.addEventListener('change', toggleHorarioFeriado);
+        feriadoNao.addEventListener('change', toggleHorarioFeriado);
+
+        // Inicializa o estado com base na seleção padrão (Não)
+        toggleHorarioFeriado();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,289 @@
+{% extends 'admin_base.html' %}
+
+{% block title %}Comprovante de Entrega - {{ atendimento.solicitacao.protocolo }} - VISA Digital{% endblock %}
+
+{% block content %}
+<style>
+    /* Estilos para impressão */
+    @media print {
+        body * {
+            visibility: hidden; /* Esconde tudo por padrão */
+        }
+        .printable-area, .printable-area * {
+            visibility: visible; /* Torna visível a área de impressão e seus filhos */
+        }
+        .printable-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%; /* Ajusta à largura da página */
+            padding: 5mm 10mm; /* Margens bem reduzidas para impressão (topo/fundo, lados) */
+            box-sizing: border-box;
+            font-size: 8.5pt; /* Tamanho de fonte para impressão, um pouco menor */
+            line-height: 1.2; /* Espaçamento de linha mais compacto */
+        }
+        .comprovante-wrapper {
+            /* REMOVIDO: height: 140mm; - Deixa a altura ser definida pelo conteúdo */
+            margin-bottom: 3mm; /* Espaçamento entre as duas vias na mesma folha */
+            padding: 10px; /* Padding interno do comprovante */
+            border: 1px dashed #999; /* Borda tracejada para separar visualmente as vias na impressão */
+            box-sizing: border-box;
+            overflow: hidden; /* Garante que o conteúdo não vaze da wrapper */
+        }
+        .comprovante-wrapper:last-of-type {
+            margin-bottom: 0; /* Remove margem do último comprovante */
+        }
+        .no-print {
+            display: none; /* Elementos que não devem aparecer na impressão */
+        }
+        .alert .btn-close {
+            display: none; 
+        }
+        /* Ajustes de tabela para impressão */
+        .table {
+            font-size: 8pt; /* Fonte ainda menor para tabelas na impressão */
+        }
+        .table th, .table td {
+            padding: 0.15rem; /* Padding menor para células de tabela */
+        }
+        /* Diminui o tamanho da "PREFEITURA MUNICIPAL..." */
+        .comprovante-header h3 {
+            font-size: 9.5pt; /* Diminuído de 10pt */
+            margin-bottom: 2px;
+            color: #0056b3;
+        }
+        .comprovante-header h4, .comprovante-header h5, .comprovante-header h6 {
+            font-size: 8.5pt; /* Ajusta tamanho dos títulos no cabeçalho */
+            margin-bottom: 2px;
+        }
+        .comprovante-header p {
+            font-size: 8pt;
+            margin-bottom: 5px;
+        }
+        .comprovante-details dt, .comprovante-details dd {
+            font-size: 8.5pt; /* Menor para detalhes */
+            margin-bottom: 0;
+        }
+        .assinatura-area {
+            margin-top: 15px; /* Reduz espaço acima da assinatura */
+        }
+        .assinatura-line {
+            border-top: 1px solid #000;
+            width: 60%;
+            margin: 0 auto;
+            padding-top: 5px;
+            margin-top: 30px; /* Mais espaço para assinatura */
+            margin-bottom: 5px;
+        }
+        .assinatura-area p {
+            font-size: 7.5pt; /* Menor para texto de assinatura */
+            margin: 2px 0;
+        }
+    }
+
+    /* Estilos para tela (não impressão) */
+    .comprovante-wrapper {
+        border: 1px solid #ccc;
+        padding: 20px;
+        margin-bottom: 20px;
+        background-color: #fff;
+    }
+    .comprovante-header {
+        text-align: center;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+    }
+    .comprovante-header h3 {
+        margin: 0;
+        color: #0056b3;
+    }
+    .comprovante-section {
+        margin-bottom: 15px;
+    }
+    .comprovante-section h6 {
+        color: #666;
+        border-bottom: 1px dashed #eee;
+        padding-bottom: 5px;
+        margin-bottom: 10px;
+    }
+    .comprovante-details dt {
+        font-weight: bold;
+    }
+    .assinatura-area {
+        margin-top: 50px;
+        text-align: center;
+    }
+    .assinatura-line {
+        border-top: 1px solid #000;
+        width: 60%;
+        margin: 0 auto;
+        padding-top: 5px;
+    }
+    .btn-print {
+        margin-top: 20px;
+    }
+</style>
+
+<div class="container mt-4 mb-5 no-print"> {# Container principal visível apenas na tela #}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Comprovante de Entrega de Receituários</h1>
+        <a href="{{ url_for('admin_detalhe_receituario', solicitacao_id=solicitacao.id) }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Voltar para Detalhes
+        </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="d-grid gap-2 mb-4">
+        <button class="btn btn-primary btn-lg btn-print" onclick="window.print();">
+            <i class="fas fa-print me-2"></i>Imprimir Comprovante (2 Vias em 1 Folha)
+        </button>
+    </div>
+</div>
+
+{# Área que será impressa #}
+<div class="printable-area">
+    {# PRIMEIRA VIA #}
+    <div class="comprovante-wrapper">
+        <div class="comprovante-header">
+            <h3>PREFEITURA MUNICIPAL DE ESPERANTINA - PI</h3> {# Mantenho o h3, ajustado no CSS print #}
+            <h4>SECRETARIA MUNICIPAL DE SAÚDE</h4>
+            <h5>Vigilância em Saúde</h5>
+            <h6>Comprovante de Entrega de Receituários Controlados - VIA 1 (UNIDADE DE SAÚDE)</h6>
+            <p><strong>PROTOCOLO DA SOLICITAÇÃO: {{ solicitacao.protocolo }}</strong></p>
+            <p><strong>DATA DO ATENDIMENTO: {{ atendimento.data_atendimento.strftime('%d/%m/%Y %H:%M') }}</strong></p>
+        </div>
+
+        <div class="comprovante-section">
+            <h6>1. Dados da Solicitação</h6>
+            <dl class="row comprovante-details">
+                <dt class="col-sm-4">Estabelecimento:</dt>
+                <dd class="col-sm-8">{{ solicitacao.nome_local }} (CNPJ: {{ solicitacao.cnpj_local }})</dd>
+                <dt class="col-sm-4">Endereço:</dt>
+                <dd class="col-sm-8">{{ solicitacao.endereco_local }}, {{ solicitacao.numero_local }}</dd>
+                <dt class="col-sm-4">Profissional Solicitante:</dt>
+                <dd class="col-sm-8">{{ solicitacao.nome_profissional }}</dd> {# Removido CPF do lado do nome para caber #}
+                <dt class="col-sm-4">Telefone do Solicitante:</dt> {# MUDOU AQUI #}
+                <dd class="col-sm-8">{{ solicitacao.telefone_contato }}</dd> {# MUDOU AQUI #}
+            </dl>
+        </div>
+
+        <div class="comprovante-section">
+            <h6>2. Receituários Dispensados</h6>
+            <table class="table table-sm table-bordered">
+                <thead>
+                    <tr>
+                        <th>Tipo</th>
+                        <th>Bloco Nº</th>
+                        <th>Páginas</th>
+                        <th>Total Folhas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bloco in blocos_dispensados %}
+                    <tr>
+                        <td>{{ tipos_receituario_map[bloco.tipo_id].sigla }}</td>
+                        <td>{{ bloco.numero_bloco }}</td>
+                        <td>{{ bloco.numero_inicial }}-{{ bloco.numero_final }}</td>
+                        <td>{{ bloco.numero_final - bloco.numero_inicial + 1 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="comprovante-section">
+            <h6>3. Dados do Atendente</h6> {# MUDOU AQUI #}
+            <dl class="row comprovante-details">
+                <dt class="col-sm-4">Nome do Atendente:</dt> {# MUDOU AQUI #}
+                <dd class="col-sm-8">{{ atendimento.nome_atendente }}</dd> {# Usando o novo campo #}
+            </dl>
+            
+            <div class="assinatura-area">
+                <p>Recebi os receituários acima relacionados em perfeito estado.</p>
+                <div class="assinatura-line"></div>
+                <p><strong>{{ atendimento.nome_recebedor }}</strong></p> {# MUDOU AQUI: Recebedor abaixo da linha #}
+                <p>CPF: {{ atendimento.cpf_recebedor }}</p> {# MUDOU AQUI #}
+                <p>Telefone: {{ atendimento.telefone_recebedor }}</p> {# MUDOU AQUI #}
+                <p>Esperantina - PI, {{ atendimento.data_atendimento.strftime('%d de %B de %Y') }}</p>
+            </div>
+        </div>
+    </div>
+
+    {# SEGUNDA VIA - VIA 2 (VIGILÂNCIA EM SAÚDE) #}
+    <div class="comprovante-wrapper"> {# Não há mais 'page-break' aqui, é o segundo comprovante na mesma área #}
+        <div class="comprovante-header">
+            <h3>PREFEITURA MUNICIPAL DE ESPERANTINA - PI</h3> {# Mantenho o h3, ajustado no CSS print #}
+            <h4>SECRETARIA MUNICIPAL DE SAÚDE</h4>
+            <h5>Vigilância em Saúde</h5>
+            <h6>Comprovante de Entrega de Receituários Controlados - VIA 2 (VIGILÂNCIA EM SAÚDE)</h6>
+            <p><strong>PROTOCOLO DA SOLICITAÇÃO: {{ solicitacao.protocolo }}</strong></p>
+            <p><strong>DATA DO ATENDIMENTO: {{ atendimento.data_atendimento.strftime('%d/%m/%Y %H:%M') }}</strong></p>
+        </div>
+
+        <div class="comprovante-section">
+            <h6>1. Dados da Solicitação</h6>
+            <dl class="row comprovante-details">
+                <dt class="col-sm-4">Estabelecimento:</dt>
+                <dd class="col-sm-8">{{ solicitacao.nome_local }} (CNPJ: {{ solicitacao.cnpj_local }})</dd>
+                <dt class="col-sm-4">Endereço:</dt>
+                <dd class="col-sm-8">{{ solicitacao.endereco_local }}, {{ solicitacao.numero_local }}</dd>
+                <dt class="col-sm-4">Profissional Solicitante:</dt>
+                <dd class="col-sm-8">{{ solicitacao.nome_profissional }}</dd>
+                <dt class="col-sm-4">Telefone do Solicitante:</dt> {# MUDOU AQUI #}
+                <dd class="col-sm-8">{{ solicitacao.telefone_contato }}</dd> {# MUDOU AQUI #}
+            </dl>
+        </div>
+
+        <div class="comprovante-section">
+            <h6>2. Receituários Dispensados</h6>
+            <table class="table table-sm table-bordered">
+                <thead>
+                    <tr>
+                        <th>Tipo</th>
+                        <th>Bloco Nº</th>
+                        <th>Páginas</th>
+                        <th>Total Folhas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bloco in blocos_dispensados %}
+                    <tr>
+                        <td>{{ tipos_receituario_map[bloco.tipo_id].sigla }}</td>
+                        <td>{{ bloco.numero_bloco }}</td>
+                        <td>{{ bloco.numero_inicial }}-{{ bloco.numero_final }}</td>
+                        <td>{{ bloco.numero_final - bloco.numero_inicial + 1 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="comprovante-section">
+            <h6>3. Dados do Recebedor (Assinatura)</h6>
+            <dl class="row comprovante-details">
+                <dt class="col-sm-4">Nome do Atendente:</dt> {# MUDOU AQUI #}
+                <dd class="col-sm-8">{{ atendimento.nome_atendente }}</dd> {# Usando o novo campo #}
+            </dl>
+            <div class="assinatura-area">
+                <p>Recebi os receituários acima relacionados em perfeito estado.</p>
+                <div class="assinatura-line"></div>
+                <p><strong>{{ atendimento.nome_recebedor }}</strong></p> {# MUDOU AQUI: Recebedor abaixo da linha #}
+                <p>CPF: {{ atendimento.cpf_recebedor }}</p> {# MUDOU AQUI #}
+                <p>Telefone: {{ atendimento.telefone_recebedor }}</p> {# MUDOU AQUI #}
+                <p>Esperantina - PI, {{ atendimento.data_atendimento.strftime('%d de %B de %Y') }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends 'admin_base.html' %}
+{% block title %}Analisar Cadastro de Pessoa Física{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Análise de Cadastro - Pessoa Física</h1>
+        <a href="{{ url_for('admin_listar_pessoas_fisicas') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Voltar para a Lista
+        </a>
+    </div>
+
+    <!-- Ações Administrativas -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Ações Administrativas</h6></div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('admin_atualizar_status_pessoa_fisica', pessoa_id=pessoa.id) }}">
+                <div class="row align-items-end">
+                    <div class="col-md-4">
+                        <p class="mb-1"><strong>Status atual:</strong> <span class="badge bg-warning text-dark">{{ pessoa.status }}</span></p>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="novo_status" class="form-label">Mudar status para:</label>
+                        <select class="form-select" name="novo_status" id="novo_status">
+                            <option value="Aprovado">Aprovado</option>
+                            <option value="Reprovado">Reprovado</option>
+                            <option value="Pendente">Pendente</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-success w-100">Salvar Alteração</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 1. Identificação do Responsável -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">1. Identificação do Responsável</h6></div>
+        <div class="card-body"><dl class="row">
+            <dt class="col-sm-3">Protocolo:</dt><dd class="col-sm-9">{{ pessoa.protocolo or 'N/A' }}</dd>
+            <dt class="col-sm-3">Nome Completo:</dt><dd class="col-sm-9">{{ pessoa.nome_completo }}</dd>
+            <dt class="col-sm-3">CPF:</dt><dd class="col-sm-9">{{ pessoa.cpf }}</dd>
+            <dt class="col-sm-3">RG:</dt><dd class="col-sm-9">{{ pessoa.rg }} ({{ pessoa.orgao_expedidor }}/{{ pessoa.uf_rg }})</dd>
+            <dt class="col-sm-3">Telefone:</dt><dd class="col-sm-9">{{ pessoa.telefone_contato }}</dd>
+            <dt class="col-sm-3">E-mail:</dt><dd class="col-sm-9">{{ pessoa.email }}</dd>
+        </dl></div>
+    </div>
+    
+    <!-- 2. Endereço do Local -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">2. Endereço do Local</h6></div>
+        <div class="card-body"><dl class="row">
+            <dt class="col-sm-3">Endereço Completo:</dt><dd class="col-sm-9">{{ pessoa.endereco_local }}</dd>
+            <dt class="col-sm-3">Tipo de Local:</dt><dd class="col-sm-9">{{ pessoa.tipo_local }}</dd>
+        </dl></div>
+    </div>
+
+    <!-- 3. Situação e Finalidade -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">3. Situação e Finalidade</h6></div>
+        <div class="card-body">
+            <h6>Situação do Local:</h6>
+            <ul>{% for item in situacao_local %}<li>{{ item }}</li>{% else %}<li>Nenhuma situação informada.</li>{% endfor %}</ul>
+            <hr>
+            <h6>Finalidade do Cadastro:</h6>
+            <ul>{% for item in finalidade_cadastro %}<li>{{ item }}</li>{% else %}<li>Nenhuma finalidade informada.</li>{% endfor %}</ul>
+            <hr>
+            <h6>Observações Adicionais:</h6>
+            <p>{{ pessoa.observacoes or 'Nenhuma.' }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

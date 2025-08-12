@@ -1,0 +1,107 @@
+{% extends 'admin_base.html' %}
+
+{% block title %}Estoque de Receituários - VISA Digital{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Gestão de Estoque de Receituários</h1>
+        <div>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left me-2"></i>Voltar para o Dashboard
+            </a>
+            <a href="{{ url_for('admin_cadastrar_lote_receituario') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Cadastrar Novo Lote
+            </a>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Informações do Estoque por Tipo</h6>
+        </div>
+        <div class="card-body">
+            {% if estoque_por_tipo %}
+                {% for sigla, dados_tipo in estoque_por_tipo.items() %}
+                <div class="mb-4 p-3 border rounded bg-light">
+                    <h5 class="text-primary">{{ dados_tipo.tipo_obj.nome }} ({{ dados_tipo.tipo_obj.sigla }})</h5>
+                    <ul class="list-group list-group-flush mb-3">
+                        <li class="list-group-item">
+                            <strong>Quantidade de Blocos (Total Disponível):</strong> 
+                            {{ dados_tipo.estoque_geral.quantidade_blocos_disponivel | default(0) }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Quantidade de Páginas (Total Disponível):</strong> 
+                            {{ dados_tipo.estoque_geral.quantidade_folhas_disponivel | default(0) }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Folhas por Bloco (Padrão para este tipo):</strong> 
+                            {{ dados_tipo.tipo_obj.folhas_por_bloco }}
+                        </li>
+                    </ul>
+
+                    <h6>Blocos Individuais (Detalhamento):</h6>
+                    {% if dados_tipo.blocos_individuais %}
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered table-hover">
+                                <thead class="table-secondary">
+                                    <tr>
+                                        <th>Número do Bloco</th>
+                                        <th>Num. Inicial</th>
+                                        <th>Num. Final</th>
+                                        <th>Folhas no Bloco</th>
+                                        <th>Data Entrada</th>
+                                        <th>Status</th>
+                                        <th>Ações</th> {# Para futuras ações, como editar status do bloco #}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for bloco in dados_tipo.blocos_individuais %}
+                                    <tr>
+                                        <td>{{ bloco.numero_bloco }}</td>
+                                        <td>{{ bloco.numero_inicial }}</td>
+                                        <td>{{ bloco.numero_final }}</td>
+                                        <td>{{ bloco.numero_final - bloco.numero_inicial + 1 }}</td>
+                                        <td>{{ bloco.data_entrada_estoque.strftime('%d/%m/%Y') }}</td>
+                                        <td>
+                                            <span class="badge 
+                                                {% if bloco.status == 'Disponível' %} bg-success
+                                                {% elif bloco.status == 'Em Uso' %} bg-warning text-dark
+                                                {% elif bloco.status == 'Dispensado' %} bg-primary
+                                                {% else %} bg-secondary
+                                                {% endif %}">
+                                                {{ bloco.status }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {# Futuros botões de ação (ex: "Descartar Bloco") #}
+                                            <button class="btn btn-outline-danger btn-sm" disabled><i class="fas fa-trash"></i></button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Nenhum bloco individual cadastrado para este tipo de receituário.</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <p>Nenhum tipo de receituário ou estoque encontrado. Cadastre tipos e adicione lotes.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends 'admin_base.html' %}
+{% block title %}Cadastros de Pessoas Físicas{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Analisar Cadastros de Pessoas Físicas</h1>
+
+    <!-- FERRAMENTA DE BUSCA ADICIONADA -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('admin_listar_pessoas_fisicas') }}">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="q" placeholder="Buscar por Nome ou CPF..." value="{{ query_q or '' }}">
+                    <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i></button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-body">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nome Completo</th>
+                        <th>CPF</th>
+                        <th>Endereço do Local</th>
+                        <th>Data do Cadastro</th>
+                        <th>Status</th>
+                        <th>Ação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pessoa in pessoas %}
+                    <tr>
+                        <td>{{ pessoa.nome_completo }}</td>
+                        <td>{{ pessoa.cpf }}</td>
+                        <td>{{ pessoa.endereco_local }}</td>
+                        <td>{{ pessoa.data_criacao.strftime('%d/%m/%Y') }}</td>
+                        <td><span class="badge bg-warning text-dark">{{ pessoa.status }}</span></td>
+                        <td>
+                            <!-- BOTÃO ATUALIZADO -->
+                            <a href="{{ url_for('admin_detalhe_pessoa_fisica', pessoa_id=pessoa.id) }}" class="btn btn-sm btn-outline-secondary">Ver Detalhes</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center">Nenhum cadastro de pessoa física encontrado para análise.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

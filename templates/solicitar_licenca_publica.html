@@ -1,0 +1,127 @@
+{% extends 'layout.html' %}
+{% block title %}Licença para Instituição Pública{% endblock %}
+
+{% block content %}
+<!-- Container adicionado para centralizar e adicionar margens laterais -->
+<div class="container my-5">
+    <div class="form-container">
+        <div class="text-center mb-5">
+            <h2 class="form-title">Solicitação de Alvará Sanitário – Instituição Pública</h2>
+            <p class="text-muted">Inicie buscando pelo CNPJ da instituição principal.</p>
+        </div>
+
+        <!-- Formulário de Busca Centralizado -->
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <form method="POST" class="mb-4">
+                    <div class="input-group">
+                        <input type="text" class="form-control form-control-lg" id="cnpj" name="cnpj" value="{{ instituicao.cnpj if instituicao else '' }}" placeholder="Digite o CNPJ da Instituição" required>
+                        <button type="submit" name="action" value="buscar_instituicao" class="btn btn-secondary px-4">Buscar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if instituicao %}
+        <hr class="my-4">
+        
+        <div class="alert alert-light border">
+            <h5 class="alert-heading">Instituição Encontrada</h5>
+            <p class="mb-1"><strong>Razão Social:</strong> {{ instituicao.razao_social }}</p>
+            <p class="mb-0"><strong>Endereço Sede:</strong> {{ instituicao.endereco }}</p>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="instituicao_id" value="{{ instituicao.id }}">
+            
+            <!-- Seção 2: Dados do Estabelecimento -->
+            <div class="form-section">
+                <h4 class="form-section-title">2. Dados do Estabelecimento que solicita o Alvará</h4>
+                <div class="row">
+                    <div class="col-md-8 mb-3"><label class="form-label">Nome do Estabelecimento / Unidade</label><input type="text" name="unidade_nome" class="form-control" required></div>
+                    <div class="col-md-4 mb-3"><label class="form-label">CNES/INEP</label><input type="text" name="unidade_cnes_inep" class="form-control"></div>
+                </div>
+                <div class="mb-3"><label class="form-label">Endereço Completo da Unidade</label><input type="text" name="unidade_endereco" class="form-control" required></div>
+                <div class="mb-3"><label class="form-label">Ponto de Referência</label><input type="text" name="unidade_ponto_ref" class="form-control"></div>
+                <div class="mb-3">
+                    <label class="form-label">Tipo de Unidade</label>
+                    <div>
+                        <div class="form-check form-check-inline"><input class="form-check-input tipo-unidade" type="radio" name="unidade_tipo" value="Escola" required> Escola</div>
+                        <div class="form-check form-check-inline"><input class="form-check-input tipo-unidade" type="radio" name="unidade_tipo" value="Unidade Básica de Saúde"> UBS</div>
+                        <div class="form-check form-check-inline"><input class="form-check-input tipo-unidade" type="radio" name="unidade_tipo" value="Ponto de Apoio"> Ponto de Apoio</div>
+                        <div class="form-check form-check-inline"><input class="form-check-input tipo-unidade" type="radio" name="unidade_tipo" value="Consultório Odontológico"> Consultório Odontológico</div>
+                        <div class="form-check form-check-inline"><input class="form-check-input tipo-unidade" type="radio" name="unidade_tipo" value="CRAS / CREAS"> CRAS / CREAS</div>
+                        <div class="form-check form-check-inline"><input class="form-check-input tipo-unidade" type="radio" name="unidade_tipo" value="Abrigo / Casa de Acolhimento"> Abrigo / Casa de Acolhimento</div>
+                        <div class="form-check form-check-inline"><input class="form-check-input tipo-unidade" type="radio" name="unidade_tipo" value="Instituições Filantrópicas"> Instituições Filantrópicas</div>
+                        <div class="form-check form-check-inline"><input class="form-check-input tipo-unidade" type="radio" name="unidade_tipo" value="Outro"> Outro: <input type="text" name="unidade_tipo_outro" class="form-control form-control-sm d-inline-block" style="width: 150px;"></div>
+                    </div>
+                </div>
+                <div id="responsavel-tecnico-section" class="p-3 border rounded bg-light mb-3">
+                    <h5 id="responsavel-title">Responsável pela Unidade</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-2"><input type="text" class="form-control" name="responsavel_unidade_nome" placeholder="Nome Completo" required></div>
+                        <div class="col-md-6 mb-2"><input type="text" class="form-control" name="responsavel_unidade_cpf" placeholder="CPF" required></div>
+                        <div class="col-md-6 mb-2"><input type="text" class="form-control" name="responsavel_unidade_cargo" placeholder="Cargo / Função" required></div>
+                        <div class="col-md-6 mb-2"><input type="text" class="form-control" name="responsavel_unidade_contato" placeholder="Contato (Telefone / E-mail)" required></div>
+                        <div class="col-md-6 mb-2" id="conselho-classe-div" style="display: none;"><input type="text" class="form-control" name="responsavel_unidade_conselho" placeholder="Nº do Conselho de Classe"></div>
+                        <div class="col-md-6 mb-2" id="declaracao-rt-div" style="display: none;"><label class="form-label">Anexar Declaração de R.T.</label><input type="file" name="responsavel_unidade_declaracao_rt" class="form-control"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seção 3: Atividades -->
+            <div class="form-section">
+                <h4 class="form-section-title">3. Atividades Desenvolvidas na Unidade</h4>
+                <div class="mb-3"><label class="form-label">Descrição detalhada das atividades</label><textarea name="atividades_desenvolvidas" class="form-control" rows="3" required></textarea></div>
+                <div class="mb-3"><label class="form-label">Serviços prestados ao público</label><textarea name="servicos_prestados" class="form-control" rows="3" required></textarea></div>
+                <div class="row">
+                    <div class="col-md-6 mb-3"><label class="form-label">Possui cozinha ou manipulação de alimentos?</label><div><div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="possui_cozinha" value="Sim" required> Sim</div><div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="possui_cozinha" value="Não"> Não</div></div></div>
+                    <div class="col-md-6 mb-3"><label class="form-label">Possui farmácia ou armazenamento de medicamentos?</label><div><div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="possui_farmacia" value="Sim" required> Sim</div><div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="possui_farmacia" value="Não"> Não</div></div></div>
+                </div>
+            </div>
+
+            <!-- Seção 4: Anexos -->
+            <div class="form-section">
+                <h4 class="form-section-title">4. Anexos Obrigatórios</h4>
+                <div class="mb-2"><label class="form-label">Declaração do Responsável pela Unidade</label><input type="file" name="anexo_declaracao_responsavel" class="form-control" required></div>
+                <div class="mb-2"><label class="form-label">Declaração de responsabilidade técnica (se aplicável)</label><input type="file" name="anexo_declaracao_rt_geral" class="form-control"></div>
+            </div>
+
+            <div class="form-section">
+                <h4 class="form-section-title">5. Observações Adicionais</h4>
+                <textarea name="observacoes_adicionais" class="form-control" rows="3"></textarea>
+            </div>
+            
+            <div class="mt-5 text-center">
+                <button type="submit" name="action" value="enviar_solicitacao_publica" class="btn btn-primary btn-lg px-5">Enviar Solicitação</button>
+            </div>
+        </form>
+    {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tiposUnidade = document.querySelectorAll('.tipo-unidade');
+    const responsavelTitle = document.getElementById('responsavel-title');
+    const conselhoDiv = document.getElementById('conselho-classe-div');
+    const declaracaoRtDiv = document.getElementById('declaracao-rt-div');
+
+    tiposUnidade.forEach(radio => {
+        radio.addEventListener('change', function() {
+            const valor = this.value;
+            conselhoDiv.style.display = 'none';
+            declaracaoRtDiv.style.display = 'none';
+
+            if (valor === 'Escola') {
+                responsavelTitle.textContent = 'Dados do Diretor(a)';
+            } else {
+                responsavelTitle.textContent = 'Dados do Responsável Técnico';
+                conselhoDiv.style.display = 'block';
+                declaracaoRtDiv.style.display = 'block';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

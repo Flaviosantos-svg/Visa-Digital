@@ -1,0 +1,68 @@
+{% extends 'admin_base.html' %}
+
+{% block title %}Autônomos Aprovados{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Profissionais Autônomos Cadastrados</h1>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Voltar ao Dashboard
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('admin_autonomos_cadastrados') }}">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="q" placeholder="Buscar por Nome Completo ou CPF..." value="{{ query_q or '' }}">
+                    <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i></button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Autônomos com Cadastro Aprovado</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Protocolo</th>
+                            <th>Nome Completo</th>
+                            <th>CPF</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for autonomo in autonomos %}
+                        <tr>
+                            <td>{{ autonomo.protocolo or 'N/A' }}</td>
+                            <td>{{ autonomo.nome_completo }}</td>
+                            <td>{{ autonomo.cpf }}</td>
+                            <td>
+                                <span class="badge bg-success">{{ autonomo.status }}</span>
+                            </td>
+                            <td>
+                                <!-- BOTÃO ATUALIZADO -->
+                                <a href="{{ url_for('admin_ficha_autonomo', autonomo_id=autonomo.id) }}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-eye me-1"></i> Ver Ficha Completa
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center">Nenhum profissional autônomo encontrado.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

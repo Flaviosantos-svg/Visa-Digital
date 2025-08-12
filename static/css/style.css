@@ -1,0 +1,153 @@
+/* Estilo geral */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f8f9fa;
+    color: #212529;
+}
+
+/* --- ESTILOS DO PAINEL PÚBLICO (INDEX) --- */
+.dashboard-container {
+    max-width: 1140px;
+    margin: 40px auto;
+    padding: 20px;
+}
+
+.dashboard-title {
+    text-align: center;
+    font-size: 2.8rem;
+    font-weight: 700;
+    color: #343a40;
+    margin-bottom: 50px;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 30px;
+    justify-content: center;
+}
+
+.card-link {
+    background-color: #ffffff;
+    border-radius: 15px;
+    padding: 35px 25px;
+    text-align: center;
+    text-decoration: none;
+    color: #495057;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.07);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #dee2e6;
+}
+
+.card-link:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.1);
+    color: #0056b3;
+}
+
+.card-icon {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 20px;
+    color: #0d6efd;
+}
+
+.card-link.card-success .card-icon { color: #198754; }
+.card-link.card-info .card-icon { color: #0dcaf0; }
+.card-link.card-danger .card-icon { color: #dc3545; }
+.card-link.card-admin .card-icon { color: #6c757d; }
+
+.card-text {
+    font-size: 1.15rem;
+    font-weight: 600;
+}
+
+/* --- NOVOS ESTILOS PARA O PAINEL DE ADMINISTRAÇÃO --- */
+.admin-wrapper {
+    display: flex;
+    min-height: 100vh;
+}
+
+.admin-sidebar {
+    width: 260px;
+    background-color: #212529; /* Um preto mais suave */
+    color: #fff;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.admin-sidebar .sidebar-header {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 30px;
+    text-align: center;
+    color: #fff;
+}
+
+.admin-sidebar .nav-link {
+    color: #ced4da;
+    padding: 12px 15px;
+    border-radius: 8px;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.admin-sidebar .nav-link:hover {
+    background-color: #495057;
+    color: #fff;
+}
+
+.admin-sidebar .nav-link.active {
+    background-color: #0d6efd;
+    color: #fff;
+    font-weight: 500;
+}
+
+.admin-sidebar .nav-icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 15px;
+}
+
+.admin-content {
+    flex-grow: 1;
+    padding: 40px;
+    background-color: #f8f9fa;
+}
+
+.page-header {
+    margin-bottom: 30px;
+}
+
+.page-header h1 {
+    font-weight: 700;
+}
+
+.stat-card {
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.04);
+}
+
+.stat-card h5 {
+    color: #6c757d;
+    font-size: 1rem;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.stat-card .stat-number {
+    font-size: 2.8rem;
+    font-weight: 700;
+    color: #212529;
+}

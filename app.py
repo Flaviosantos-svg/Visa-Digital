@@ -57,6 +57,17 @@ from models import Denuncias, Empresas
 from weasyprint import HTML
 from flask_login import login_required, current_user
 import locale
+from flask import render_template, request, flash, redirect, url_for
+from datetime import datetime
+from models import db, Empresas, Autonomo, Notificacoes, Irregularidade, Funcionario
+from sqlalchemy.orm import joinedload
+from flask import make_response
+
+
+
+
+
+
 
 
 app = Flask(__name__)
@@ -931,8 +942,12 @@ def handle_evento_upload(file_key, tipo_documento):
         return unique_filename
     return None
 
-# ---------------------------------------------------------- FUNÇÃO PARA GERAR O PDF DO ALVARÁ DE EVENTO ---------------------------------------------------------------------------------------------------------------
-
+# ---------------------------------------------------------- FUNÇÃO PARA LIMPAR DOC. ---------------------------------------------------------------------------------------------------------------
+def limpar_documento(doc):
+    """Função auxiliar para remover caracteres não numéricos de um documento."""
+    if not doc:
+        return ""
+    return re.sub(r'\D', '', doc)
 
 # -----------------------------------------------------------SALVAR DOC AUTONOMO------------------------------------------------------------------------------------------------------------
 def salvar_documento_autonomo(file, tipo_documento):
@@ -2443,80 +2458,132 @@ def admin_salvar_parecer_vistoria(vistoria_id):
         
     return redirect(url_for('admin_detalhe_vistoria', vistoria_id=vistoria_id))
 
+from flask import render_template, request, flash, redirect, url_for
+from datetime import datetime, timezone # Importa timezone para datas UTC
+from sqlalchemy import func
+import re # Importa o módulo de expressões regulares para limpeza
+
+# Certifique-se de importar todos os modelos necessários, incluindo Autonomo
+from models import db, Empresas, Autonomo, Notificacoes, Irregularidade, Funcionario
+
+def limpar_documento(doc):
+    """Função auxiliar para remover caracteres não numéricos de um documento."""
+    if not doc:
+        return ""
+    return re.sub(r'\D', '', doc)
+
 @app.route('/admin/registrar_notificacao', methods=['GET', 'POST'])
 def registrar_notificacao():
-    empresa = None
+    # Variáveis de controle do formulário
+    entidade = None
     cnpj_pesquisado = ""
-    cpf_preenchido = "" # Para manter o valor do CPF
+    show_unidentified_option = False
+    search_performed = False
 
-    # Lógica para pré-preenchimento (se vier de uma denúncia, etc.)
-    if request.method == 'GET':
-        cnpj_preenchido_url = request.args.get('cnpj_vinculado')
-        cpf_preenchido_url = request.args.get('cpf_vinculado')
-        if cnpj_preenchido_url:
-            cnpj_limpo = limpar_cnpj(cnpj_preenchido_url)
-            empresa = Empresas.query.filter_by(cnpj=cnpj_limpo).first()
-            cnpj_pesquisado = cnpj_preenchido_url
-        elif cpf_preenchido_url:
-            cpf_preenchido = cpf_preenchido_url # Guarda o CPF para o campo
-            flash(f'CPF {cpf_preenchido_url} preenchido. Busque o estabelecimento ou prossiga.', 'info')
+    # Busca as listas para os dropdowns
+    irregularidades_lista = Irregularidade.query.order_by(Irregularidade.nome).all()
+    fiscais_lista = Funcionario.query.filter(func.lower(Funcionario.cargo) == 'fiscal').order_by(Funcionario.nome).all()
     
-    # Lógica para quando o formulário é ENVIADO
     if request.method == 'POST':
         form_data = request.form
         action = form_data.get('action')
         cnpj_pesquisado = form_data.get('cnpj_cpf', '')
+        search_performed = True
 
         if action == 'buscar_empresa':
-            cnpj_cpf = limpar_cnpj(form_data.get('cnpj_cpf'))
-            empresa = Empresas.query.filter_by(cnpj=cnpj_cpf).first()
-            if not empresa:
-                flash('Nenhuma empresa encontrada com este CNPJ. A notificação pode ser registrada apenas com o CPF/CNPJ informado.', 'warning')
+            cnpj_cpf_limpo = limpar_documento(cnpj_pesquisado)
+            empresa_encontrada = Empresas.query.filter_by(cnpj=cnpj_cpf_limpo).first()
+            if empresa_encontrada:
+                entidade = {"id": empresa_encontrada.id, "nome_principal": empresa_encontrada.razao_social, "tipo": "empresa"}
+            else:
+                autonomo_encontrado = Autonomo.query.filter_by(cpf=cnpj_cpf_limpo).first()
+                if autonomo_encontrado:
+                    entidade = {"id": autonomo_encontrado.id, "nome_principal": autonomo_encontrado.nome, "tipo": "autonomo"}
+            
+            if not entidade:
+                show_unidentified_option = True
         
         elif action == 'salvar_notificacao':
             try:
-                # Lógica para gerar protocolo da notificação (mantida)
+                # Gera o protocolo
                 ano_atual = datetime.now().year
                 prefixo = f"NOT-{ano_atual}/"
                 ultimo = db.session.query(db.func.max(Notificacoes.protocolo_notificacao)).filter(Notificacoes.protocolo_notificacao.like(f"{prefixo}%")).scalar()
                 proximo_num = int(ultimo.split('/')[1]) + 1 if ultimo else 1
                 protocolo = f"{prefixo}{proximo_num:05d}"
 
-                empresa_id_notificacao = form_data.get('empresa_id')
-                cpf_vinculado_notificacao = None
-                if not empresa_id_notificacao:
-                    # Pega o CPF/CNPJ que foi buscado, mesmo que não tenha encontrado uma empresa
-                    cpf_vinculado_notificacao = limpar_cnpj(form_data.get('cnpj_cpf_hidden'))
+                # Formata as irregularidades
+                lista_irregularidades = request.form.getlist('irregularidade_id')
+                lista_prazos = request.form.getlist('prazo_irregularidade')
+                irregularidades_formatadas = []
+                for i, irreg_id in enumerate(lista_irregularidades):
+                    irregularidade_obj = db.session.get(Irregularidade, irreg_id)
+                    if irregularidade_obj:
+                        prazo = lista_prazos[i] if i < len(lista_prazos) and lista_prazos[i] else "Não definido"
+                        irregularidades_formatadas.append(f"- {irregularidade_obj.nome} (Prazo: {prazo})")
 
+                # Cria o objeto base da notificação com os nomes de campo CORRETOS
                 nova_notificacao = Notificacoes(
                     protocolo_notificacao=protocolo,
-                    empresa_id=empresa_id_notificacao if empresa_id_notificacao else None,
-                    cpf_vinculado=cpf_vinculado_notificacao,
-                    data_notificacao=datetime.utcnow(),
-                    irregularidades_constatadas=form_data.get('irregularidades_constatadas'),
-                    prazo=form_data.get('prazo'),
-                    
-                    # A linha 'fiscal_responsavel' foi REMOVIDA.
-                    # O valor será salvo como nulo (vazio), o que agora é permitido pelo banco.
-                    
-                    parecer_final='Pendente' # Status inicial
+                    data_notificacao=datetime.now(timezone.utc),
+                    # Usando o nome correto do campo do modelo
+                    descricao_irregularidade="\n".join(irregularidades_formatadas),
+                    # Mapeando os campos do formulário para os campos do modelo
+                    ciencia_nome=form_data.get('responsavel_info_nome'),
+                    ciencia_documento=form_data.get('responsavel_info_cpf'),
+                    # O campo 'motivo_notificacao' pode ser usado para as observações
+                    motivo_notificacao=form_data.get('observacoes_adicionais'),
+                    parecer_final='Pendente'
                 )
+
+                # Adiciona os fiscais à relação many-to-many
+                fiscal_id_1 = form_data.get('fiscal_id_1')
+                fiscal_id_2 = form_data.get('fiscal_id_2')
+                if fiscal_id_1:
+                    fiscal1 = db.session.get(Funcionario, fiscal_id_1)
+                    if fiscal1: nova_notificacao.fiscais_responsaveis.append(fiscal1)
+                if fiscal_id_2:
+                    fiscal2 = db.session.get(Funcionario, fiscal_id_2)
+                    if fiscal2: nova_notificacao.fiscais_responsaveis.append(fiscal2)
+
+                # Define o tipo de notificação (Regular ou Avulsa)
+                if form_data.get('unidentified_notification_choice') == 'on':
+                    # ATENÇÃO: Adicione os campos abaixo ao seu modelo Notificacoes para que a notificação avulsa funcione
+                    # notificado_avulso_nome = db.Column(db.String)
+                    # notificado_avulso_documento = db.Column(db.String)
+                    # notificado_avulso_telefone = db.Column(db.String)
+                    # notificado_avulso_endereco = db.Column(db.String)
+                    nova_notificacao.notificado_avulso_nome = form_data.get('unidentified_nome')
+                    nova_notificacao.notificado_avulso_documento = form_data.get('unidentified_cpf_cnpj')
+                    nova_notificacao.notificado_avulso_telefone = form_data.get('unidentified_telefone')
+                    nova_notificacao.notificado_avulso_endereco = form_data.get('unidentified_endereco')
+                else:
+                    entidade_id = form_data.get('entidade_id')
+                    entidade_tipo = form_data.get('entidade_tipo')
+                    if entidade_tipo == 'empresa':
+                        nova_notificacao.empresa_id = entidade_id
+                    elif entidade_tipo == 'autonomo':
+                        nova_notificacao.autonomo_id = entidade_id
+
                 db.session.add(nova_notificacao)
                 db.session.commit()
-                
                 flash(f'Notificação registrada com sucesso! Protocolo: {protocolo}', 'success')
-                return redirect(url_for('admin_dashboard')) # Ou outra página de sucesso
+                return redirect(url_for('admin.listar_notificacoes')) 
 
             except Exception as e:
                 db.session.rollback()
-                flash(f'Ocorreu um erro ao registrar a notificação: {e}', 'danger')
-                print(f"ERRO AO REGISTRAR NOTIFICAÇÃO: {e}")
+                flash(f'Ocorreu um erro ao salvar a notificação: {e}', 'danger')
 
-    # Se for um request GET, ou após uma busca, renderiza o template
+    # Passa as variáveis para o template
     return render_template('registrar_notificacao.html', 
-                           empresa=empresa, 
+                           entidade=entidade, 
                            cnpj_pesquisado=cnpj_pesquisado,
-                           cpf_preenchido=cpf_preenchido) # Passa o CPF para o template
+                           irregularidades_lista=irregularidades_lista,
+                           fiscais_lista=fiscais_lista,
+                           show_unidentified_option=show_unidentified_option,
+                           search_performed=search_performed)
+
+
 
 @app.route('/admin/notificacoes')
 # @login_required # Lembre-se de proteger suas rotas de admin
@@ -2572,16 +2639,27 @@ def admin_analisar_notificacoes():
 
 @app.route('/admin/notificacao/<int:notificacao_id>')
 def admin_detalhe_notificacao(notificacao_id):
-    # Busca a notificação e a empresa associada (se houver)
-    resultado = db.session.query(Notificacoes, Empresas).outerjoin(
-    Empresas, Notificacoes.empresa_id == Empresas.id
-    ).filter(Notificacoes.id == notificacao_id).first_or_404()
+    """
+    Busca uma notificação pelo ID.
+    
+    IMPORTANTE: Para que os detalhes da empresa e do autônomo apareçam,
+    seu modelo 'Notificacoes' em models.py precisa ter os relacionamentos definidos.
+    Adicione as seguintes linhas dentro da sua classe 'Notificacoes':
 
-    if not resultado:
+    empresa = db.relationship('Empresas', backref='notificacoes')
+    autonomo = db.relationship('Autonomo', backref='notificacoes')
+    """
+    # Simplificando a busca.
+    notificacao = Notificacoes.query.get(notificacao_id)
+
+    # Se a notificação não for encontrada, retorna um erro 404.
+    if not notificacao:
         abort(404)
-    notificacao, empresa = resultado
-    # Passa os objetos diretamente, não o resultado da tupla
-    return render_template('admin_detalhe_notificacao.html', notificacao=notificacao, empresa=empresa)
+
+    # CORREÇÃO: O caminho do template foi restaurado para 'admin/detalhe_notificacao.html'
+    # conforme sua confirmação.
+    return render_template('admin_detalhe_notificacao.html', notificacao=notificacao)
+
 
 
 @app.route('/admin/notificacao/<int:notificacao_id>/salvar_parecer', methods=['POST'])
@@ -2604,8 +2682,81 @@ def admin_salvar_parecer_notificacao(notificacao_id):
     return redirect(url_for('admin_detalhe_notificacao', notificacao_id=notificacao_id))
 
 
+#-------------------------------------------------------------TUDO SOBRE NOTIFICAÇÃO---------------------------------------------------------------------------------------------------------
 
+@app.route('/admin/notificacao/<int:notificacao_id>/gerar-pdf')
+def admin_gerar_pdf_notificacao(notificacao_id):
+    """
+    Gera um arquivo PDF para uma notificação específica.
+    """
+    # Busca a notificação pelo ID ou retorna um erro 404 se não encontrar.
+    notificacao = Notificacoes.query.get_or_404(notificacao_id)
 
+    # Inicializa o objeto PDF
+    pdf = FPDF()
+    pdf.add_page()
+    # Define a fonte que suporta caracteres latinos
+    pdf.set_font("Arial", size=12)
+
+    # --- Cabeçalho do Documento ---
+    # CORREÇÃO: Removemos o .encode(). A biblioteca FPDF lida com a codificação.
+    pdf.cell(200, 10, txt=f"Notificação - Protocolo: {notificacao.protocolo_notificacao}", ln=True, align='C')
+    pdf.ln(10)
+
+    # --- Seção 1: Identificação do Notificado ---
+    pdf.set_font("Arial", 'B', size=11)
+    pdf.cell(200, 10, txt="1. Identificação do Notificado", ln=True)
+    pdf.set_font("Arial", size=11)
+
+    if notificacao.empresa_id:
+        empresa = Empresas.query.get(notificacao.empresa_id)
+        if empresa:
+            pdf.cell(200, 7, txt=f"Razão Social: {empresa.razao_social}", ln=True)
+            pdf.cell(200, 7, txt=f"CNPJ: {empresa.cnpj}", ln=True)
+        else:
+            pdf.cell(200, 7, txt="Empresa não encontrada.", ln=True)
+    else:
+        pdf.cell(200, 7, txt=f"Nome: {notificacao.ciencia_nome or 'Não informado'}", ln=True)
+        pdf.cell(200, 7, txt=f"Documento: {notificacao.ciencia_documento or 'Não informado'}", ln=True)
+    
+    pdf.ln(5)
+
+    # --- Seção 2: Detalhes da Notificação ---
+    pdf.set_font("Arial", 'B', size=11)
+    pdf.cell(200, 10, txt="2. Detalhes da Notificação", ln=True)
+    pdf.set_font("Arial", size=11)
+    
+    data_formatada = notificacao.data_notificacao.strftime('%d/%m/%Y') if notificacao.data_notificacao else 'Não informada'
+    pdf.cell(200, 7, txt=f"Data da Vistoria: {data_formatada}", ln=True)
+    pdf.multi_cell(0, 7, txt=f"Irregularidades: {notificacao.descricao_irregularidade or 'Nenhuma irregularidade descrita.'}")
+
+    pdf.ln(5)
+
+    # --- Seção 3: Fiscais Responsáveis ---
+    pdf.set_font("Arial", 'B', size=11)
+    pdf.cell(200, 10, txt="3. Fiscais Responsáveis", ln=True)
+    pdf.set_font("Arial", size=11)
+
+    nomes_fiscais = [fiscal.nome for fiscal in notificacao.fiscais_responsaveis]
+    texto_equipe = ", ".join(nomes_fiscais) if nomes_fiscais else 'Não informado'
+    
+    pdf.cell(200, 7, txt=f"Equipe: {texto_equipe}", ln=True)
+
+    # --- Seção de Assinatura ---
+    pdf.ln(10)
+    pdf.set_font("Arial", 'I', size=10)
+    pdf.cell(200, 10, txt="________________________________", ln=True, align='C')
+    pdf.cell(200, 7, txt=f"{notificacao.ciencia_nome or 'Responsável não informado'}", ln=True, align='C')
+    pdf.cell(200, 7, txt="Ciente", ln=True, align='C')
+
+    # --- Geração da Resposta HTTP ---
+    # A saída já está em bytes, então não é necessário codificar novamente.
+    response_data = pdf.output(dest='S')
+    response = make_response(response_data)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'inline; filename=notificacao_{notificacao.protocolo_notificacao}.pdf'
+    
+    return response
 
 @app.route('/admin/licenca_publica/<int:licenca_id>/salvar_parecer', methods=['POST'])
 def admin_salvar_parecer_licenca_publica(licenca_id):
@@ -2643,8 +2794,28 @@ def admin_consultar_licencas_publicas():
 def registrar_auto_infracao():
     empresa = None
     cnpj_pesquisado = ""
+    numero_proximo_auto = None
 
-    # Lógica para pré-preenchimento (GET request)
+    # 🔹 Função para gerar próximo número
+    def gerar_numero_auto():
+        ano_atual = datetime.now().year
+        prefixo = f"AUT-{ano_atual}/"
+
+        ultimo = db.session.query(
+            db.func.max(AutosInfracao.protocolo_auto)
+        ).filter(AutosInfracao.protocolo_auto.like(f"{prefixo}%")).scalar()
+
+        if ultimo:
+            ultimo_numero = int(ultimo.split('/')[-1])
+            proximo_num = ultimo_numero + 1
+        else:
+            proximo_num = 1
+
+        return f"{prefixo}{proximo_num:05d}"
+
+    # Sempre gera número ao abrir o formulário
+    numero_proximo_auto = gerar_numero_auto()
+
     if request.method == 'GET':
         cnpj_preenchido_url = request.args.get('cnpj_vinculado')
         cpf_preenchido_url = request.args.get('cpf_vinculado')
@@ -2656,59 +2827,44 @@ def registrar_auto_infracao():
             cpf_limpo = limpar_cnpj(cpf_preenchido_url)
             cnpj_pesquisado = cpf_limpo
             flash(f'CPF {cpf_preenchido_url} preenchido. Busque o estabelecimento ou prossiga.', 'info')
-    
-    # Lógica para quando o formulário é ENVIADO (POST request)
+
     if request.method == 'POST':
-        form_data = request.form
-        action = form_data.get('action')
-        cnpj_pesquisado = form_data.get('cnpj_cpf', '')
+        try:
+            empresa_id_auto = request.form.get('empresa_id')
+            cpf_vinculado_auto = None
+            if not empresa_id_auto:
+                cpf_vinculado_auto = limpar_cnpj(request.form.get('cnpj_cpf_hidden'))
 
-        # As verificações de 'action' agora estão DENTRO do bloco POST
-        if action == 'buscar_empresa':
-            cnpj_cpf = limpar_cnpj(form_data.get('cnpj_cpf'))
-            empresa = Empresas.query.filter_by(cnpj=cnpj_cpf).first()
-            if not empresa:
-                flash('Nenhuma empresa encontrada.', 'warning')
-        
-        elif action == 'salvar_auto_infracao': # O nome da ação pode variar no seu form
-            try:
-                # Lógica para gerar protocolo do Auto de Infração
-                ano_atual = datetime.now().year
-                prefixo = f"AUT-{ano_atual}/"
-                ultimo = db.session.query(db.func.max(AutosInfracao.protocolo_auto)).filter(AutosInfracao.protocolo_auto.like(f"{prefixo}%")).scalar()
-                proximo_num = int(ultimo.split('/')[1]) + 1 if ultimo else 1
-                protocolo = f"{prefixo}{proximo_num:05d}"
+            # Garante que o número é válido no momento do salvamento
+            numero_gerado = gerar_numero_auto()
 
-                # Obtém o ID da empresa ou o CPF vinculado
-                empresa_id_auto = form_data.get('empresa_id')
-                cpf_vinculado_auto = None
-                if not empresa_id_auto:
-                    cpf_vinculado_auto = limpar_cnpj(form_data.get('cnpj_cpf_hidden'))
+            novo_auto = AutosInfracao(
+                protocolo_auto=numero_gerado,
+                empresa_id=empresa_id_auto if empresa_id_auto else None,
+                cpf_vinculado=cpf_vinculado_auto,
+                data_auto=datetime.utcnow(),
+                irregularidades_constatadas=request.form.get('irregularidades_constatadas'),
+                prazo_defesa_dias=request.form.get('prazo_defesa_dias'),
+                fiscal_responsavel=request.form.get('fiscal_responsavel'),
+                status='Pendente'
+            )
+            db.session.add(novo_auto)
+            db.session.commit()
 
-                novo_auto = AutosInfracao(
-                    protocolo_auto=protocolo,
-                    empresa_id=empresa_id_auto if empresa_id_auto else None,
-                    cpf_vinculado=cpf_vinculado_auto,
-                    data_auto=datetime.utcnow(),
-                    irregularidades_constatadas=form_data.get('irregularidades_constatadas'),
-                    prazo_defesa_dias=form_data.get('prazo_defesa_dias'),
-                    fiscal_responsavel=form_data.get('fiscal_responsavel'),
-                    status='Pendente' # Status inicial
-                )
-                db.session.add(novo_auto)
-                db.session.commit()
-                
-                flash(f'Auto de Infração registrado com sucesso! Protocolo: {protocolo}', 'success')
-                return redirect(url_for('admin_dashboard')) # Ou outra página de sucesso
+            flash(f'Auto de Infração registrado com sucesso! Protocolo: {numero_gerado}', 'success')
+            return redirect(url_for('admin_dashboard'))
 
-            except Exception as e:
-                db.session.rollback()
-                flash(f'Ocorreu um erro ao registrar o auto de infração: {e}', 'danger')
-                print(f"ERRO AO REGISTRAR AUTO DE INFRAÇÃO: {e}")
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Ocorreu um erro ao registrar o auto de infração: {e}', 'danger')
+            print(f"ERRO AO REGISTRAR AUTO DE INFRAÇÃO: {e}")
 
-    # Se for um request GET, ou após uma busca, renderiza o template
-    return render_template('registrar_auto_infracao.html', empresa=empresa, cnpj_pesquisado=cnpj_pesquisado)
-
+    return render_template(
+        'registrar_auto_infracao.html',
+        empresa=empresa,
+        cnpj_pesquisado=cnpj_pesquisado,
+        numero_proximo_auto=numero_proximo_auto
+    )
 
 @app.route('/admin/analisar_processos')
 def admin_analisar_processos():

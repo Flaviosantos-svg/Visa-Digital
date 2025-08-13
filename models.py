@@ -4,6 +4,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 
 
+notificacao_fiscais = db.Table('notificacao_fiscais',
+    db.Column('notificacao_id', db.Integer, db.ForeignKey('notificacoes.id'), primary_key=True),
+    db.Column('funcionario_id', db.Integer, db.ForeignKey('funcionarios.id'), primary_key=True)
+)
 
 # ==============================================================================
 # 1. MODELOS DE BASE
@@ -315,8 +319,6 @@ class LicencasPublicas(db.Model):
     empresa = db.relationship('Empresas', back_populates='licencas_publicas')
 
 
-
-
 class Denuncias(db.Model):
     __tablename__ = 'denuncias'
     id = db.Column(db.Integer, primary_key=True)
@@ -347,23 +349,30 @@ class Denuncias(db.Model):
 class Notificacoes(db.Model):
     __tablename__ = 'notificacoes'
     id = db.Column(db.Integer, primary_key=True)
+    
+    # --- Colunas Mantidas e Adaptadas ---
     empresa_id = db.Column(db.Integer, db.ForeignKey('empresas.id'), nullable=True)
     protocolo_notificacao = db.Column(db.String, unique=True, nullable=False)
-    data_notificacao = db.Column(db.Date)
-    data_vistoria_origem = db.Column(db.Date, nullable=True)
-    irregularidades_constatadas = db.Column(db.Text)
-    prazo = db.Column(db.String)
+    data_notificacao = db.Column(db.Date, default=datetime.utcnow)
     ciencia_nome = db.Column(db.String)
     ciencia_documento = db.Column(db.String)
-    fiscal_nome = db.Column(db.String)
-    fiscal_matricula = db.Column(db.String)
-    observacoes_adicionais = db.Column(db.Text)
     anexos_path = db.Column(db.String)
     parecer_final = db.Column(db.String, default='Pendente')
-    justificativa_parecer = db.Column(db.Text)
-    notificado_cpf_cnpj = db.Column(db.String(18), nullable=True, index=True)
-    cpf_vinculado = db.Column(db.String(14), nullable=True)
-    fiscal_responsavel = db.Column(db.String, nullable=True)
+
+    # --- Novos Campos para o Formulário ---
+    motivo_notificacao = db.Column(db.Text, nullable=True)
+    descricao_irregularidade = db.Column(db.Text, nullable=True)
+    prazo_regularizacao = db.Column(db.String(50), nullable=True)
+
+    # --- RELACIONAMENTO MUITOS-PARA-MUITOS (ADICIONADO) ---
+    # Este é o campo que cria a ligação com os funcionários através da tabela de associação.
+    # O nome 'fiscais_responsaveis' vem do seu erro original.
+    fiscais_responsaveis = db.relationship(
+        'Funcionario',
+        secondary=notificacao_fiscais,
+        back_populates='notificacoes_associadas',
+        lazy='dynamic' # Opcional: útil para consultas mais eficientes
+    )
 
 class AutosInfracao(db.Model):
     __tablename__ = 'autos_infracao'
@@ -378,6 +387,8 @@ class AutosInfracao(db.Model):
     fiscal_nome = db.Column(db.String)
     anexos_path = db.Column(db.String)
     status = db.Column(db.String, default='Emitido')
+    cpf_vinculado = db.Column(db.String(14))
+
 
 class Vistoria(db.Model):
     __tablename__ = 'vistoria'
@@ -612,12 +623,17 @@ class Funcionario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(100), nullable=False)
     matricula = db.Column(db.String(20), unique=True, nullable=False)
-    
-    # Adicione este campo para definir o papel do funcionário
     cargo = db.Column(db.String(50), nullable=False) # Ex: 'Coordenador', 'Fiscal', 'Administrativo'
-
-    # O campo da assinatura permanece
     caminho_assinatura = db.Column(db.String(255), nullable=True)
+
+    # --- RELACIONAMENTO DE VOLTA (ADICIONADO) ---
+    # Permite acessar facilmente todas as notificações de um funcionário.
+    notificacoes_associadas = db.relationship(
+        'Notificacoes',
+        secondary=notificacao_fiscais,
+        back_populates='fiscais_responsaveis',
+        lazy='dynamic'
+    )
 
     def __repr__(self):
         return f'<Funcionario {self.nome} - {self.cargo}>'

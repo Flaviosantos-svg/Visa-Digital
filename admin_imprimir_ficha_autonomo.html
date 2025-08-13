@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Ficha Cadastral - {{ autonomo.nome_completo }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        @media print { .no-print { display: none; } }
+        body { background-color: #fff; font-size: 11pt; }
+        .container { max-width: 800px; }
+        .section-title { font-weight: bold; background-color: #f2f2f2; padding: 5px; margin-top: 1rem; border: 1px solid #dee2e6; }
+        dl { margin-bottom: 0; }
+        dt { font-weight: 600 !important; }
+    </style>
+</head>
+<body>
+    <div class="container my-4">
+        <div class="no-print mb-4 text-center">
+            <button onclick="window.print()" class="btn btn-primary">Imprimir</button>
+            <button onclick="window.close()" class="btn btn-secondary">Fechar</button>
+        </div>
+
+        <div class="text-center mb-4">
+            <h5>FICHA DE CADASTRO DE AUTÔNOMO</h5>
+            <h6>VIGILÂNCIA SANITÁRIA MUNICIPAL</h6>
+        </div>
+
+        <p class="section-title">1. Dados Pessoais</p>
+        <dl class="row">
+            <dt class="col-sm-4">Protocolo:</dt><dd class="col-sm-8">{{ autonomo.protocolo or 'N/A' }}</dd>
+            <dt class="col-sm-4">Nome Completo:</dt><dd class="col-sm-8">{{ autonomo.nome_completo or 'Não informado' }}</dd>
+            <dt class="col-sm-4">CPF:</dt><dd class="col-sm-8">{{ autonomo.cpf or 'Não informado' }}</dd>
+            <dt class="col-sm-4">RG:</dt><dd class="col-sm-8">{{ autonomo.rg or 'Não informado' }} ({{ autonomo.orgao_expedidor or 'N/A' }}/{{ autonomo.uf_rg or 'N/A' }})</dd>
+            <dt class="col-sm-4">Data de Nascimento:</dt><dd class="col-sm-8">{{ autonomo.data_nascimento.strftime('%d/%m/%Y') if autonomo.data_nascimento else 'Não informado' }}</dd>
+            <dt class="col-sm-4">Sexo:</dt><dd class="col-sm-8">{{ autonomo.sexo or 'Não informado' }}</dd>
+        </dl>
+
+        <p class="section-title">2. Contato</p>
+        <dl class="row">
+            <dt class="col-sm-4">Telefone Celular:</dt><dd class="col-sm-8">{{ autonomo.telefone_celular or 'Não informado' }}</dd>
+            <dt class="col-sm-4">E-mail:</dt><dd class="col-sm-8">{{ autonomo.email or 'Não informado' }}</dd>
+        </dl>
+
+        <p class="section-title">3. Endereço do Local de Atendimento</p>
+        <dl class="row">
+            <dt class="col-sm-4">Endereço Completo:</dt><dd class="col-sm-8">{{ autonomo.endereco_atendimento or 'Não informado' }}</dd>
+            <dt class="col-sm-4">Tipo de Local:</dt><dd class="col-sm-8">{{ autonomo.tipo_local or 'Não informado' }}</dd>
+        </dl>
+
+        <p class="section-title">4. Dados Profissionais</p>
+        <dl class="row">
+            <dt class="col-sm-4">Profissão:</dt><dd class="col-sm-8">{{ autonomo.profissao or 'Não informado' }}</dd>
+            <dt class="col-sm-4">Conselho de Classe:</dt><dd class="col-sm-8">{{ autonomo.conselho_classe or 'Não informado' }}</dd>
+            <dt class="col-sm-4">Nº Registro Profissional:</dt><dd class="col-sm-8">{{ autonomo.numero_registro_profissional or 'Não informado' }}</dd>
+            <dt class="col-sm-4">Inscrição Municipal:</dt><dd class="col-sm-8">{{ autonomo.inscricao_municipal or 'Não informado' }}</dd>
+            <dt class="col-sm-4">Atividades Exercidas:</dt><dd class="col-sm-8">{{ autonomo.atividades_exercidas or 'Não informado' }}</dd>
+            <dt class="col-sm-4">Modalidade:</dt><dd class="col-sm-8">{{ autonomo.modalidade_atendimento or 'Não informado' }}</dd>
+            <dt class="col-sm-4">Horário:</dt><dd class="col-sm-8">{{ autonomo.horario_funcionamento or 'Não informado' }}</dd>
+        </dl>
+        
+        <div class="text-center mt-5">
+            <p>Documento gerado pelo sistema VISA Digital em {{ data_geracao }}.</p>
+        </div>
+    </div>
+</body>
+</html>

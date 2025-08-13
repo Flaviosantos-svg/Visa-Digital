@@ -1,0 +1,170 @@
+{% extends 'admin_base.html' %}
+
+{% block title %}Detalhes da Denúncia - {{ denuncia.protocolo_denuncia }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h3 mb-0 text-gray-800">Detalhes da Denúncia</h1>
+        <div>
+            <a href="{{ url_for('admin_gerar_relatorio_denuncia', denuncia_id=denuncia.id) }}" class="btn btn-outline-info btn-sm me-2" target="_blank"><i class="fas fa-print me-2"></i>Gerar Relatório (PDF)</a>
+            <a href="{{ url_for('admin_listar_denuncias') }}" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left me-2"></i>Voltar para a Lista</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Informações da Denúncia</h6>
+                    <span class="badge 
+                        {% if denuncia.status == 'Recebida' %}bg-primary
+                        {% elif denuncia.status == 'Em Análise' %}bg-warning text-dark
+                        {% elif denuncia.status == 'Atendida' %}bg-success
+                        {% elif denuncia.status == 'Arquivada' %}bg-secondary
+                        {% else %}bg-light text-dark
+                        {% endif %}">
+                        {{ denuncia.status }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Protocolo:</dt>
+                        <dd class="col-sm-8">{{ denuncia.protocolo_denuncia }}</dd>
+
+                        <dt class="col-sm-4">Data da Denúncia:</dt>
+                        <dd class="col-sm-8">{{ denuncia.data_denuncia.strftime('%d/%m/%Y às %H:%M') if denuncia.data_denuncia else 'N/A' }}</dd>
+
+                        <hr class="my-3">
+                        
+                        {% if not denuncia.anonimato %}
+                            <dt class="col-sm-4">Denunciante:</dt>
+                            <dd class="col-sm-8">{{ denuncia.denunciante_nome or 'Não informado' }}</dd>
+
+                            <dt class="col-sm-4">Telefone:</dt>
+                            <dd class="col-sm-8">{{ denuncia.denunciante_telefone or 'Não informado' }}</dd>
+                            
+                            <dt class="col-sm-4">E-mail:</dt>
+                            <dd class="col-sm-8">{{ denuncia.denunciante_email or 'Não informado' }}</dd>
+                        {% else %}
+                            <dt class="col-sm-4">Denunciante:</dt>
+                            <dd class="col-sm-8"><span class="badge bg-warning text-dark">Anônimo</span></dd>
+                        {% endif %}
+
+                        <hr class="my-3">
+
+                        <dt class="col-sm-4">Local Denunciado:</dt>
+                        <dd class="col-sm-8">{{ denuncia.denunciado_nome or 'Não Informado' }}</dd>
+
+                        <dt class="col-sm-4">Endereço:</dt>
+                        <dd class="col-sm-8">{{ denuncia.denunciado_rua or ''}}, {{ denuncia.denunciado_numero or 'S/N'}}</dd>
+                        
+                        <dt class="col-sm-4">Bairro:</dt>
+                        <dd class="col-sm-8">{{ denuncia.denunciado_bairro or 'Não Informado' }}</dd>
+
+                        <dt class="col-sm-4">Município:</dt>
+                        <dd class="col-sm-8">{{ denuncia.denunciado_municipio or 'Não Informado' }}</dd>
+                        
+                        <dt class="col-sm-4">Ponto de Referência:</dt>
+                        <dd class="col-sm-8">{{ denuncia.denunciado_ponto_ref or 'Não Informado' }}</dd>
+
+                        <dt class="col-sm-4">Tipo de Local:</dt>
+                        <dd class="col-sm-8">{{ denuncia.denunciado_tipo_local or 'Não Informado' }}</dd>
+
+                        <hr class="my-3">
+                        
+                        <dt class="col-sm-4">Motivo(s):</dt>
+                        <dd class="col-sm-8">{{ denuncia.motivo_classificacao or 'Não classificado' }}</dd>
+
+                        <dt class="col-sm-4">Descrição Detalhada:</dt>
+                        <dd class="col-sm-8">
+                            <p class="p-2 border bg-light rounded-1" style="white-space: pre-wrap;">{{ denuncia.motivo_descricao or 'Nenhuma descrição fornecida.' }}</p>
+                        </dd>
+                        
+                        <dt class="col-sm-4">Evidências Enviadas:</dt>
+                        <dd class="col-sm-8">
+                            {% if denuncia.anexos_path %}
+                                <ul class="list-unstyled">
+                                {% for anexo in denuncia.anexos_path.split(',') %}
+                                    {% if anexo.strip() %}
+                                    <li class="mb-1">
+                                        <a href="{{ url_for('uploaded_file', subfolder='denuncias', filename=anexo.strip().replace('denuncias\\', '').replace('denuncias/', '')) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-paperclip me-2"></i>{{ anexo.strip().split('/')[-1].split('\\')[-1] }}
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                {% endfor %}
+                                </ul>
+                            {% else %}
+                                Nenhum anexo enviado.
+                            {% endif %}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Ações do Fiscal</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('admin_despachar_denuncia', denuncia_id=denuncia.id) }}" enctype="multipart/form-data">
+                        <div class="mb-3"><label for="novo_status" class="form-label">Alterar Status</label><select class="form-select" id="novo_status" name="novo_status"><option value="Recebida" {% if denuncia.status == 'Recebida' %}selected{% endif %}>Recebida</option><option value="Em Análise" {% if denuncia.status == 'Em Análise' %}selected{% endif %}>Em Análise</option><option value="Atendida" {% if denuncia.status == 'Atendida' %}selected{% endif %}>Atendida</option><option value="Arquivada" {% if denuncia.status == 'Arquivada' %}selected{% endif %}>Arquivada</option></select></div>
+                        <div class="mb-3"><label for="despacho_fiscal" class="form-label">Despacho / Observações do Fiscal</label><textarea class="form-control" id="despacho_fiscal" name="despacho_fiscal" rows="3">{{ denuncia.despacho_fiscal or '' }}</textarea></div>
+                        <div class="mb-3"><label class="form-label">Vincular denúncia?</label><div class="form-check"><input class="form-check-input" type="radio" name="tipo_vinculo" id="vincularNao" value="nao" {% if not denuncia.empresa_id and not denuncia.cpf_vinculado %}checked{% endif %}><label class="form-check-label" for="vincularNao">Não Vincular</label></div><div class="form-check"><input class="form-check-input" type="radio" name="tipo_vinculo" id="vincularEmpresa" value="empresa" {% if denuncia.empresa_id %}checked{% endif %}><label class="form-check-label" for="vincularEmpresa">Vincular a uma Empresa (CNPJ)</label></div><div class="form-check"><input class="form-check-input" type="radio" name="tipo_vinculo" id="vincularCpf" value="cpf" {% if denuncia.cpf_vinculado %}checked{% endif %}><label class="form-check-label" for="vincularCpf">Vincular a uma Pessoa (CPF)</label></div></div>
+                        <div id="cnpj-vinculo-div" class="mb-3" style="display: none;"><label for="denunciado_cnpj" class="form-label">Digite o CNPJ da Empresa</label><input type="text" class="form-control" name="denunciado_cnpj" id="denunciado_cnpj" value="{{ denuncia.denunciado_cpf_cnpj if denuncia.empresa_id else '' }}"></div>
+                        <div id="cpf-vinculo-div" class="mb-3" style="display: none;"><label for="denunciado_cpf" class="form-label">Digite o CPF da Pessoa</label><input type="text" class="form-control" name="denunciado_cpf" id="denunciado_cpf" value="{{ denuncia.cpf_vinculado or '' }}"></div>
+                        <div class="mb-3"><label class="form-label">Anexar Fotos do Atendimento:</label><div class="row row-cols-2 g-2">{% for i in range(10) %}<div class="col"><label for="fiscal_anexo_{{ i }}" class="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center" style="height: 40px; font-size: 0.8rem;"><i class="fas fa-camera me-2"></i><span id="file-label-{{ i }}">Foto {{ i + 1 }}</span></label><input type="file" name="fiscal_anexos" id="fiscal_anexo_{{ i }}" class="d-none" accept="image/*" capture="environment" onchange="updateFileName({{ i }})"></div>{% endfor %}</div></div>
+                        {% if denuncia.fiscal_anexos_path %}<div class="mt-2"><p class="mb-1 fw-bold small text-muted">Anexos já enviados pelo fiscal:</p><ul class="list-group list-group-flush">{% for anexo in denuncia.fiscal_anexos_path.split(',') %}{% if anexo.strip() %}<li class="list-group-item list-group-item-light py-1 px-0"><a href="{{ url_for('uploaded_file', subfolder='fiscais', filename=anexo.strip()) }}" target="_blank"><i class="fas fa-file-alt me-2"></i>{{ anexo.strip() }}</a></li>{% endif %}{% endfor %}</ul></div>{% endif %}
+                        <hr>
+                        <div class="mb-3"><label class="form-label fw-bold">Gerar Novo Processo a Partir Desta Denúncia?</label><div class="form-check"><input class="form-check-input" type="radio" name="acao_futura" id="acaoNenhuma" value="nenhuma" checked><label class="form-check-label" for="acaoNenhuma">Nenhuma Ação Imediata</label></div><div class="form-check"><input class="form-check-input" type="radio" name="acao_futura" id="acaoNotificacao" value="gerar_notificacao"><label class="form-check-label" for="acaoNotificacao">Gerar Notificação</label></div><div class="form-check"><input class="form-check-input" type="radio" name="acao_futura" id="acaoAuto" value="gerar_auto"><label class="form-check-label" for="acaoAuto">Gerar Auto de Infração</label></div></div>
+                        <button type="submit" class="btn btn-success w-100 mt-3"><i class="fas fa-save me-2"></i>Salvar e Prosseguir</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const vincularNao = document.getElementById('vincularNao');
+    const vincularEmpresa = document.getElementById('vincularEmpresa');
+    const vincularCpf = document.getElementById('vincularCpf');
+    const cnpjDiv = document.getElementById('cnpj-vinculo-div');
+    const cpfDiv = document.getElementById('cpf-vinculo-div');
+
+    function toggleVinculoInputs() {
+        if (vincularEmpresa.checked) {
+            cnpjDiv.style.display = 'block';
+            cpfDiv.style.display = 'none';
+        } else if (vincularCpf.checked) {
+            cnpjDiv.style.display = 'none';
+            cpfDiv.style.display = 'block';
+        } else {
+            cnpjDiv.style.display = 'none';
+            cpfDiv.style.display = 'none';
+        }
+    }
+    toggleVinculoInputs();
+    vincularNao.addEventListener('change', toggleVinculoInputs);
+    vincularEmpresa.addEventListener('change', toggleVinculoInputs);
+    vincularCpf.addEventListener('change', toggleVinculoInputs);
+
+    window.updateFileName = function(index) {
+        const input = document.getElementById('fiscal_anexo_' + index);
+        const label = document.getElementById('file-label-' + index);
+        if (input.files && input.files.length > 0) {
+            label.textContent = input.files[0].name.substring(0, 10) + '...';
+            label.parentElement.classList.remove('btn-outline-secondary');
+            label.parentElement.classList.add('btn-success');
+        }
+    }
+});
+</script>
+{% endblock %}

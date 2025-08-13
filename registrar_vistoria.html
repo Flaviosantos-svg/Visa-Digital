@@ -1,0 +1,273 @@
+{% extends 'admin_base.html' %}
+{% block title %}Registrar Vistoria Detalhada{% endblock %}
+
+{% block styles %}
+<style>
+    /* Estilo para alinhar os itens adicionados dinamicamente (recomendações, não conformidades, inspetores) */
+    .dynamic-list-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        gap: 0.5rem; /* Adiciona um espaço entre os elementos */
+    }
+    .dynamic-list-item .form-control,
+    .dynamic-list-item .form-select {
+        flex-grow: 1; /* Faz o campo de texto/select ocupar o espaço disponível */
+    }
+    .question-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <h1 class="mb-4">Registrar Nova Vistoria</h1>
+    
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Buscar Estabelecimento</h5>
+            <form method="POST">
+                <input type="hidden" name="action" value="buscar_empresa">
+                <div class="row align-items-end">
+                    <div class="col-md-4">
+                        <label for="cnpj_cpf" class="form-label">CNPJ/CPF</label>
+                        <input type="text" class="form-control" name="cnpj_cpf" id="cnpj_cpf" value="{{ cnpj_pesquisado }}">
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-secondary w-100">Buscar Dados</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="action" value="salvar_vistoria">
+        <div class="card shadow">
+            <div class="card-body">
+
+                <fieldset class="border p-3 mb-4 rounded">
+                    <legend class="w-auto px-2 h6">1. Identificação do Estabelecimento</legend>
+                    {% if empresa %}
+                        <div class="alert alert-success">
+                            <b>Empresa Vinculada:</b> {{ empresa.razao_social }} (CNPJ: {{ empresa.cnpj }})
+                            <input type="hidden" name="empresa_id" value="{{ empresa.id }}">
+                        </div>
+                        <dl class="row">
+                            <dt class="col-sm-3">Razão Social:</dt><dd class="col-sm-9">{{ empresa.razao_social }}</dd>
+                            <dt class="col-sm-3">Nome Fantasia:</dt><dd class="col-sm-9">{{ empresa.nome_fantasia }}</dd>
+                            <dt class="col-sm-3">Endereço:</dt><dd class="col-sm-9">{{ empresa.endereco }}</dd>
+                        </dl>
+                    {% else %}
+                        <div class="alert alert-warning">Nenhuma empresa vinculada.</div>
+                    {% endif %}
+                </fieldset>
+
+                <fieldset class="border p-3 mb-4 rounded">
+                    <legend class="w-auto px-2 h6">2. Dados da Inspeção</legend>
+                    <div class="row g-3">
+                        <div class="col-md-4"><label class="form-label">Data da Inspeção</label><input type="date" class="form-control" name="data_inspecao" required></div>
+                        
+                        <div class="col-md-12">
+                            <label class="form-label">Objetivo da Inspeção</label>
+                            <div class="d-flex flex-wrap">
+                                {% set objetivos = ['Concessão de Licença Sanitária', 'Renovação de Licença Sanitária', 'Verificação de Denúncia', 'Rotina', 'Atendimento a Processos', 'Atend. ao MPPI'] %}
+                                {% for obj in objetivos %}
+                                <div class="form-check me-3">
+                                    <input class="form-check-input" type="checkbox" name="objetivo_inspecao" value="{{ obj }}" id="obj_{{ loop.index }}">
+                                    <label class="form-check-label" for="obj_{{ loop.index }}">{{ obj }}</label>
+                                </div>
+                                {% endfor %}
+                                <div class="form-check d-flex align-items-center">
+                                    <input class="form-check-input" type="checkbox" name="objetivo_inspecao_outro" value="Outro" id="obj_outro">
+                                    <label class="form-check-label me-2" for="obj_outro">Outro:</label>
+                                    <input type="text" class="form-control form-control-sm" name="objetivo_outro_texto" placeholder="Especificar">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label">Equipe Inspetora</label>
+                            <div id="inspetores-container">
+                                </div>
+                            <button type="button" id="add-inspetor" class="btn btn-outline-secondary btn-sm mt-2">+ Adicionar Inspetor</button>
+                        </div>
+                        <div class="col-md-12"><label class="form-label">Acompanhante(s) pelo Estabelecimento (Nome, Cargo)</label><textarea class="form-control" name="acompanhantes" rows="2"></textarea></div>
+                    </div>
+                </fieldset>
+
+                <fieldset class="border p-3 mb-4 rounded">
+                    <legend class="w-auto px-2 h6">3. Base Legal e Documental</legend>
+                    <p>Documentos Apresentados:</p>
+                    {% set documentos = ['Alvará de Funcionamento', 'Alvará Sanitário', 'Certificado de Dedetização', 'Manual de Boas Práticas', 'Procedimentos Operacionais Padronizados (POPs)', 'Comprovante de Limpeza de Caixa d\'Água', 'Comprovante de Controle de Pragas', 'Atestados de Saúde Ocupacional (ASO)'] %}
+                    {% for doc in documentos %}
+                    <div class="form-check"><input class="form-check-input" type="checkbox" name="doc_{{ doc|lower|replace(' ', '_')|replace('\'', '') }}" id="doc_{{ loop.index }}"><label class="form-check-label" for="doc_{{ loop.index }}">{{ doc }}</label></div>
+                    {% endfor %}
+                    <div class="mt-2"><label class="form-label">Outros Documentos (um por linha)</label><textarea class="form-control" name="doc_outros" rows="2"></textarea></div>
+                </fieldset>
+
+                <fieldset class="border p-3 mb-4 rounded">
+                    <legend class="w-auto px-2 h6">Checklist de Verificação</legend>
+                    <select class="form-select" name="checklist_id" id="checklist_id">
+                        <option value="">Selecione um checklist...</option>
+                        {% for cl in checklists %}<option value="{{ cl.id }}">{{ cl.titulo }}</option>{% endfor %}
+                    </select>
+                    <div id="perguntas-container" class="mt-4"></div>
+                </fieldset>
+
+                <fieldset class="border p-3 mb-4 rounded">
+                    <legend class="w-auto px-2 h6">4. Descrição das Constatações (Não Conformidades)</legend>
+                    <div id="nao-conformidades-container"></div>
+                    <button type="button" id="add-nao-conformidade" class="btn btn-outline-secondary mt-2">Adicionar Item</button>
+                </fieldset>
+
+                <fieldset class="border p-3 mb-4 rounded">
+                    <legend class="w-auto px-2 h6">6. Recomendações e/ou Exigências</legend>
+                     <div id="recomendacoes-container"></div>
+                    <button type="button" id="add-recomendacao" class="btn btn-outline-secondary mt-2">Adicionar Recomendação</button>
+                </fieldset>
+
+                <fieldset class="border p-3 my-4 rounded">
+                    <legend class="w-auto px-2 h6">5. Anexos Fotográficos</legend>
+                    <p class="form-text">Anexe até 10 fotos.</p>
+                    <div class="row">
+                        {% for i in range(1, 11) %}<div class="col-md-6 mb-3"><label for="foto_{{ i }}" class="form-label">Foto {{ i }}</label><input class="form-control" type="file" id="foto_{{ i }}" name="foto_{{ i }}" accept="image/*" capture="environment"></div>{% endfor %}
+                    </div>
+                </fieldset>
+                
+                <button type="submit" class="btn btn-primary w-100 btn-lg">Registrar e Salvar Vistoria</button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Bloco do Checklist (sem alterações)
+    const checklistSelect = document.getElementById('checklist_id');
+    const perguntasContainer = document.getElementById('perguntas-container');
+    checklistSelect.addEventListener('change', function() {
+        const checklistId = this.value;
+        perguntasContainer.innerHTML = '<p class="text-center text-muted">Carregando...</p>';
+        if (!checklistId) {
+            perguntasContainer.innerHTML = '';
+            return;
+        }
+        fetch('/api/checklist/' + checklistId)
+            .then(response => response.json())
+            .then(data => {
+                perguntasContainer.innerHTML = '';
+                for (const categoria in data) {
+                    const categoriaHeader = document.createElement('h5');
+                    categoriaHeader.className = 'mt-3 text-secondary';
+                    categoriaHeader.textContent = categoria;
+                    perguntasContainer.appendChild(categoriaHeader);
+
+                    data[categoria].forEach(pergunta => {
+                        const div = document.createElement('div');
+                        div.className = 'p-3 mb-2 bg-light border rounded question-item';
+                        const questionLabel = '<label class="form-label fw-bold mb-0">' + pergunta.texto + '</label>';
+                        let answerControls = '';
+                        if (pergunta.tipo_resposta === 'multipla_escolha') {
+                            const qId = 'pergunta_' + pergunta.id;
+                            answerControls =
+                                '<div class="btn-group" role="group">' +
+                                    '<input type="radio" class="btn-check" name="' + qId + '" id="' + qId + '_sim" value="Sim" autocomplete="off" required>' +
+                                    '<label class="btn btn-outline-success" for="' + qId + '_sim">Sim</label>' +
+                                    '<input type="radio" class="btn-check" name="' + qId + '" id="' + qId + '_nao" value="Não" autocomplete="off">' +
+                                    '<label class="btn btn-outline-danger" for="' + qId + '_nao">Não</label>' +
+                                    '<input type="radio" class="btn-check" name="' + qId + '" id="' + qId + '_na" value="N.A" autocomplete="off">' +
+                                    '<label class="btn btn-outline-secondary" for="' + qId + '_na">N.A</label>' +
+                                '</div>';
+                        } else {
+                            answerControls = '<div><textarea name="pergunta_' + pergunta.id + '" class="form-control" rows="2" placeholder="Digite a resposta..."></textarea></div>';
+                        }
+                        div.innerHTML = questionLabel + answerControls;
+                        perguntasContainer.appendChild(div);
+                    });
+                }
+            });
+    });
+
+    // ============================================================
+    // == NOVO SCRIPT PARA ADICIONAR INSPETORES DINAMICAMENTE ==
+    // ============================================================
+    // Pré-carrega os funcionários passados pelo backend em uma variável JavaScript.
+    // Use o filtro |tojson para garantir que os dados sejam passados de forma segura.
+    const funcionarios = {{ funcionarios|tojson }};
+
+    document.getElementById('add-inspetor').addEventListener('click', function() {
+        const container = document.getElementById('inspetores-container');
+        const newItem = document.createElement('div');
+        newItem.className = 'dynamic-list-item';
+
+        // Cria o <select>
+        const select = document.createElement('select');
+        select.name = 'inspetores[]'; // O '[]' faz com que o formulário envie uma lista
+        select.className = 'form-select';
+        select.required = true;
+
+        // Adiciona a opção padrão (placeholder)
+        let defaultOption = new Option("Selecione um inspetor...", "");
+        defaultOption.disabled = true;
+        defaultOption.selected = true;
+        select.appendChild(defaultOption);
+        
+        // Preenche o select com os funcionários
+        funcionarios.forEach(func => {
+            // Cria um <option> para cada funcionário
+            const option = document.createElement('option');
+            option.value = func.id;
+            option.textContent = `${func.nome_completo} (Matrícula: ${func.matricula})`;
+            select.appendChild(option);
+        });
+        
+        // Cria o botão de remover
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn btn-danger btn-sm';
+        removeBtn.innerHTML = '&times;'; // 'X' para remover
+        removeBtn.onclick = function() {
+            this.parentElement.remove();
+        };
+
+        // Adiciona o select e o botão ao novo item
+        newItem.appendChild(select);
+        newItem.appendChild(removeBtn);
+        
+        // Adiciona o novo item ao container
+        container.appendChild(newItem);
+    });
+
+    // Lógica para campos dinâmicos (Não Conformidades)
+    document.getElementById('add-nao-conformidade').addEventListener('click', function() {
+        const container = document.getElementById('nao-conformidades-container');
+        const newItem = document.createElement('div');
+        newItem.className = 'dynamic-list-item';
+        newItem.innerHTML = `
+            <input type="text" name="nao_conformidades[]" class="form-control" placeholder="Descreva a não conformidade...">
+            <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">&times;</button>
+        `;
+        container.appendChild(newItem);
+    });
+
+    // Lógica para campos dinâmicos (Recomendações)
+    document.getElementById('add-recomendacao').addEventListener('click', function() {
+        const container = document.getElementById('recomendacoes-container');
+        const newItem = document.createElement('div');
+        newItem.className = 'dynamic-list-item';
+        newItem.innerHTML = `
+            <input type="text" name="recomendacoes[]" class="form-control" placeholder="Descreva a recomendação/exigência...">
+            <input type="number" name="prazos[]" class="form-control" placeholder="Prazo (dias)" style="width: 150px;">
+            <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">&times;</button>
+        `;
+        container.appendChild(newItem);
+    });
+});
+</script>
+{% endblock %}

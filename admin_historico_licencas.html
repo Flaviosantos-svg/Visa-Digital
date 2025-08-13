@@ -1,0 +1,84 @@
+{% extends 'admin_base.html' %}
+
+{% block title %}Histórico de Todas as Licenças{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="h3 mb-4 text-gray-800">Histórico de Todas as Licenças</h1>
+
+    <!-- Formulário de Filtro Combinado -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('admin_historico_licencas') }}">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label for="q" class="form-label">Buscar por Protocolo ou CNPJ:</label>
+                        <input type="text" class="form-control" id="q" name="q" value="{{ query_busca or '' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="data_inicio" class="form-label">De (Data de Emissão):</label>
+                        <input type="date" name="data_inicio" id="data_inicio" class="form-control" value="{{ data_inicio }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="data_fim" class="form-label">Até (Data de Emissão):</label>
+                        <input type="date" name="data_fim" id="data_fim" class="form-control" value="{{ data_fim }}">
+                    </div>
+                    <div class="col-md-1">
+                        <button class="btn btn-primary w-100" type="submit"><i class="fas fa-search"></i></button>
+                    </div>
+                    <div class="col-md-1">
+                        <a href="{{ url_for('admin_historico_licencas') }}" class="btn btn-secondary w-100" title="Limpar Filtros"><i class="fas fa-eraser"></i></a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabela de Resultados -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Resultados</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Protocolo</th>
+                            <th>Empresa</th>
+                            <th>CNPJ</th>
+                            <th>Data de Emissão</th>
+                            <th>Status</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for licenca in licencas %}
+                        <tr>
+                            <td>{{ licenca.protocolo_licencas }}</td>
+                            <td>{{ licenca.estabelecimento.razao_social if licenca.estabelecimento }}</td>
+                            <td>{{ licenca.estabelecimento.cnpj if licenca.estabelecimento }}</td>
+                            <td>{{ licenca.data_emissao.strftime('%d/%m/%Y') if licenca.data_emissao else 'N/A' }}</td>
+                            <td>
+                                <span class="badge {% if licenca.status == 'Aprovado' %} bg-success {% elif licenca.status in ['Reprovado', 'Cancelado'] %} bg-danger {% else %} bg-secondary {% endif %}">
+                                    {{ licenca.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('admin_detalhe_licenca', licenca_id=licenca.id, origin='historico') }}" class="btn btn-sm btn-secondary">
+                                    <i class="fas fa-eye"></i> Ver Detalhes
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center">Nenhum registro encontrado para os filtros aplicados.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

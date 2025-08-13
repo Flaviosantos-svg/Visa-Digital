@@ -1,0 +1,179 @@
+{% extends 'admin_base.html' %}
+{% block title %}Painel Administrativo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Painel de Administração</h1>
+
+    <!-- Linha de Cartões de Estatísticas -->
+    <div class="row">
+        <!-- Card: Cadastros para Análise -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <a href="{{ url_for('admin_analisar_solicitacoes') }}" class="card-link">
+                <div class="card border-left-primary shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs fw-bold text-primary text-uppercase mb-1">Cadastros para Análise</div>
+                                <div class="h5 mb-0 fw-bold text-gray-800">{{ stats.cadastros_pendentes or 0 }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-building fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Card: Licenças (Empresas e Autônomos) Pendentes -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <a href="{{ url_for('admin_analisar_licencas') }}" class="card-link">
+                <div class="card border-left-info shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs fw-bold text-info text-uppercase mb-1">Licenças (Empresas/Autônomos)</div>
+                                <div class="h5 mb-0 fw-bold text-gray-800">{{ stats.licencas_privadas_pendentes or 0 }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-file-alt fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- :: INÍCIO DA CORREÇÃO :: -->
+        <!-- Card: Licenças (Públicas) Pendentes -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <a href="{{ url_for('admin_listar_licencas_publicas') }}" class="card-link">
+                <div class="card border-left-success shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs fw-bold text-success text-uppercase mb-1">Licenças (Públicas)</div>
+                                <div class="h5 mb-0 fw-bold text-gray-800">{{ stats.licencas_publicas_pendentes or 0 }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-landmark fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <!-- :: FIM DA CORREÇÃO :: -->
+
+        <!-- Card: Consultar Protocolo -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <a href="{{ url_for('consultar_solicitacao') }}" class="card-link">
+                <div class="card border-left-secondary shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs fw-bold text-secondary text-uppercase mb-1">Consultar Protocolo</div>
+                                <div class="h5 mb-0 fw-bold text-gray-800">Ver</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-search fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Card: Denúncias em Aberto -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <a href="{{ url_for('admin_listar_denuncias') }}" class="card-link">
+                <div class="card border-left-danger shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs fw-bold text-danger text-uppercase mb-1">Denúncias em Aberto</div>
+                                <div class="h5 mb-0 fw-bold text-gray-800">{{ stats.denuncias_abertas or 0 }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-bullhorn fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Card: Solicitações de Receituário -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <a href="{{ url_for('admin_solicitacoes_receituario') }}" class="card-link">
+                <div class="card border-left-warning shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs fw-bold text-warning text-uppercase mb-1">Solicitações de Receituário</div>
+                                <div class="h5 mb-0 fw-bold text-gray-800">{{ stats.solicitacoes_receituario or 0 }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-receipt fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Card: Estoque de Receituários -->
+        <div class="col-xl-3 col-md-6 mb-4">
+             <a href="{{ url_for('admin_estoque_receituario') }}" class="card-link">
+                <div class="card border-left-dark shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs fw-bold text-dark text-uppercase mb-1">Estoque de Receituários</div>
+                                <div class="h5 mb-0 fw-bold text-gray-800">{{ stats.estoque_receituarios or 0 }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-boxes fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Card: Testes de Calazar para Análise -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <a href="{{ url_for('admin_listar_solicitacao_calazar') }}" class="card-link">
+                <div class="card border-left-info shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs fw-bold text-info text-uppercase mb-1">Testes de Calazar para Análise</div>
+                                <div class="h5 mb-0 fw-bold text-gray-800">{{ stats.testes_calazar or 0 }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-dog fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Estilo para garantir que os links não tenham sublinhado e tenham efeito hover -->
+<style>
+    .card-link {
+        text-decoration: none;
+    }
+    .card-link .card:hover {
+        opacity: 0.8;
+        transform: translateY(-2px);
+        transition: all 0.2s ease-in-out;
+    }
+</style>
+{% endblock %}

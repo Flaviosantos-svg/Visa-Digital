@@ -1,0 +1,213 @@
+{% extends 'admin_base.html' %}
+
+{% block title %}Detalhes da Solicitação {{ solicitacao.protocolo }} - VISA Digital{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Detalhes da Solicitação de Receituário</h1>
+        <a href="{{ url_for('admin_solicitacoes_receituario') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Voltar para a Lista
+        </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Informações da Solicitação - Protocolo: {{ solicitacao.protocolo }}</h6>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">Protocolo:</dt>
+                <dd class="col-sm-9">{{ solicitacao.protocolo }}</dd>
+
+                <dt class="col-sm-3">Data da Solicitação:</dt>
+                <dd class="col-sm-9">{{ solicitacao.data_solicitacao.strftime('%d/%m/%Y %H:%M') }}</dd>
+
+                <dt class="col-sm-3">Status Atual:</dt>
+                <dd class="col-sm-9">
+                    <span class="badge 
+                        {% if solicitacao.status == 'Pendente' %} bg-warning text-dark
+                        {% elif solicitacao.status == 'Em Análise' %} bg-info
+                        {% elif solicitacao.status == 'Atendida' %} bg-success
+                        {% elif solicitacao.status == 'Recusada' %} bg-danger
+                        {% else %} bg-secondary
+                        {% endif %}">
+                        {{ solicitacao.status }}
+                    </span>
+                    {% if solicitacao.data_atendimento %}
+                        <small class="text-muted ms-2">(Último Atendimento em: {{ solicitacao.data_atendimento.strftime('%d/%m/%Y %H:%M') }})</small>
+                    {% endif %}
+                </dd>
+
+                {% if solicitacao.justificativa_recusa %}
+                    <dt class="col-sm-3">Justificativa de Recusa:</dt>
+                    <dd class="col-sm-9 text-danger">{{ solicitacao.justificativa_recusa }}</dd>
+                {% endif %}
+
+                <hr class="my-3">
+
+                <dt class="col-sm-12 fw-bold mb-2">Dados do Local Solicitante:</dt>
+                <dt class="col-sm-3">Estabelecimento:</dt>
+                <dd class="col-sm-9">{{ solicitacao.nome_local }} (CNPJ: {{ solicitacao.cnpj_local }})</dd>
+
+                <dt class="col-sm-3">Endereço:</dt>
+                <dd class="col-sm-9">{{ solicitacao.endereco_local }}, {{ solicitacao.numero_local }}</dd>
+
+                <dt class="col-sm-3">Contato do Local:</dt>
+                <dd class="col-sm-9">{{ solicitacao.contato_local }}</dd>
+
+                <hr class="my-3">
+
+                <dt class="col-sm-12 fw-bold mb-2">Dados do Profissional Solicitante:</dt>
+                <dt class="col-sm-3">Nome:</dt>
+                <dd class="col-sm-9">{{ solicitacao.nome_profissional }} (CPF: {{ solicitacao.cpf_profissional }})</dd>
+
+                <dt class="col-sm-3">Conselho:</dt>
+                <dd class="col-sm-9">{{ solicitacao.conselho_profissional }}</dd>
+
+                <dt class="col-sm-3">Telefone:</dt>
+                <dd class="col-sm-9">{{ solicitacao.telefone_contato }}</dd>
+
+                <dt class="col-sm-3">E-mail:</dt>
+                <dd class="col-sm-9">{{ solicitacao.email_contato }}</dd>
+
+                <hr class="my-3">
+
+                <dt class="col-sm-12 fw-bold mb-2">Receituários Solicitados:</dt>
+                <dd class="col-sm-12">
+                    <ul class="list-group list-group-flush">
+                        {% for sigla_tipo_chave, quantidade in receituarios_solicitados_parsed.items() %}
+                            {% set sigla_base = sigla_tipo_chave.split('_')[0] %} 
+                            {% set tipo_obj = tipos_receituario_map[sigla_base] %} 
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                {% if tipo_obj %}
+                                    {{ tipo_obj.nome }} ({{ tipo_obj.sigla }})
+                                {% else %}
+                                    {{ sigla_tipo_chave | replace('_', ' ') | title }}
+                                {% endif %}
+                                <span class="badge bg-primary rounded-pill">{{ quantidade }} bloco(s)</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </dd>
+
+                {# NOVO: SEÇÃO DE RECEITUÁRIOS DISPENSADOS (se a solicitação foi atendida) #}
+                {% if solicitacao.status == 'Atendida' and atendimento and blocos_dispensados_agrupados %}
+                <hr class="my-3">
+                <dt class="col-sm-12 fw-bold mb-2">Receituários Dispensados (Atendimento #{{ atendimento.id }}):</dt>
+                <dd class="col-sm-12">
+                    <dl class="row">
+                        <dt class="col-sm-3">Recebedor:</dt>
+                        <dd class="col-sm-9">{{ atendimento.nome_recebedor }} (CPF: {{ atendimento.cpf_recebedor }})</dd>
+                        <dt class="col-sm-3">Contato Recebedor:</dt>
+                        <dd class="col-sm-9">{{ atendimento.telefone_recebedor | default('Não informado') }}</dd>
+                        <dt class="col-sm-3">Data da Dispensa:</dt>
+                        <dd class="col-sm-9">{{ atendimento.data_atendimento.strftime('%d/%m/%Y %H:%M') }}</dd>
+                    </dl>
+
+                    {% for sigla_tipo, blocos_do_tipo in blocos_dispensados_agrupados.items() %}
+                        {% set tipo_obj = tipos_receituario_map[sigla_tipo] %}
+                        <h6 class="mt-3 mb-2 text-info">{{ tipo_obj.nome }} ({{ tipo_obj.sigla }}) - Total: {{ blocos_do_tipo|length }} bloco(s)</h6>
+                        <ul class="list-group list-group-flush mb-3">
+                            {% for bloco in blocos_do_tipo %}
+                            <li class="list-group-item">
+                                Bloco: <strong>{{ bloco.numero_bloco }}</strong> - Nº: {{ bloco.numero_inicial }} a {{ bloco.numero_final }} ({{ bloco.numero_final - bloco.numero_inicial + 1 }} folhas)
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    {% endfor %}
+                </dd>
+                {% endif %}
+                {# FIM NOVO: SEÇÃO DE RECEITUÁRIOS DISPENSADOS #}
+            </dl>
+        </div>
+    </div>
+
+    {# SEÇÃO DE AÇÕES ADMINISTRATIVAS #}
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Ações Administrativas</h6>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('admin_atualizar_status_receituario', solicitacao_id=solicitacao.id) }}" method="POST">
+                <div class="row align-items-end">
+                    <div class="col-md-4 mb-3">
+                        <label for="status-select" class="form-label">Mudar status para:</label>
+                        <select name="novo_status" id="status-select" class="form-select">
+                            <option value="Pendente" {% if solicitacao.status == 'Pendente' %}selected{% endif %}>Pendente</option>
+                            <option value="Em Análise" {% if solicitacao.status == 'Em Análise' %}selected{% endif %}>Em Análise</option>
+                            <option value="Atendida" {% if solicitacao.status == 'Atendida' %}selected{% endif %}>Atendida</option>
+                            <option value="Recusada" {% if solicitacao.status == 'Recusada' %}selected{% endif %}>Recusada</option>
+                        </select>
+                    </div>
+                    <div class="col-md-5 mb-3">
+                        <label for="justificativa-input" class="form-label">
+                            Justificativa <span id="justificativa-required-star" class="text-danger" style="display: none;">*</span>
+                        </label>
+                        <input type="text" name="justificativa" id="justificativa-input" class="form-control" value="{{ solicitacao.justificativa_recusa or '' }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="fas fa-save me-2"></i>Salvar Status
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <hr class="my-4">
+
+            {# Botão para ABRIR O FLUXO DE ATENDIMENTO/DISPENSA #}
+            {% if solicitacao.status == 'Pendente' or solicitacao.status == 'Em Análise' %}
+            <div class="d-grid gap-2 mb-2"> {# Adicionado mb-2 para espaçar do botão de imprimir #}
+                <a href="{{ url_for('admin_atender_receituario', solicitacao_id=solicitacao.id) }}" class="btn btn-success btn-lg">
+                    <i class="fas fa-handshake me-2"></i>Atender Solicitação (Dispensar Receituários)
+                </a>
+            </div>
+            {% endif %}
+
+            {# NOVO: Botão para imprimir comprovante, visível SOMENTE se atendida e houver atendimento #}
+            {% if solicitacao.status == 'Atendida' and atendimento %}
+            <div class="d-grid gap-2">
+                <a href="{{ url_for('admin_comprovante_receituario', atendimento_id=atendimento.id) }}" class="btn btn-info btn-lg">
+                    <i class="fas fa-print me-2"></i>Imprimir Comprovante de Entrega
+                </a>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+    {{ super() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const statusSelect = document.getElementById('status-select');
+            const justificativaInput = document.getElementById('justificativa-input');
+            const justificativaStar = document.getElementById('justificativa-required-star');
+
+            function toggleJustificativaRequirement() {
+                const selectedValue = statusSelect.value;
+                const isRequired = selectedValue === 'Recusada';
+                
+                justificativaInput.required = isRequired;
+                justificativaStar.style.display = isRequired ? 'inline' : 'none';
+            }
+
+            toggleJustificativaRequirement(); // Executa ao carregar a página
+            statusSelect.addEventListener('change', toggleJustificativaRequirement); // Adiciona listener para mudança
+        });
+    </script>
+{% endblock %}
+{% endblock %}

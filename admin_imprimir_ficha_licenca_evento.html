@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Ficha de Solicitação de Licença - {{ licenca.nome_evento }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        @media print { 
+            .no-print { display: none; }
+            body { font-size: 10pt; }
+        }
+        body { background-color: #fff; }
+        .container { max-width: 800px; }
+        .section-title { 
+            font-weight: bold; 
+            background-color: #f2f2f2; 
+            padding: 8px; 
+            margin-top: 1.5rem; 
+            border: 1px solid #dee2e6; 
+            font-size: 12pt; 
+        }
+        dl.row dt { font-weight: 600; }
+        .sub-item dt { font-weight: normal !important; text-align: right; padding-right: 1rem;}
+    </style>
+</head>
+<body>
+    <div class="container my-4">
+        <div class="no-print mb-4 text-center">
+            <button onclick="window.print()" class="btn btn-primary">Imprimir</button>
+            <button onclick="window.close()" class="btn btn-secondary">Fechar</button>
+        </div>
+
+        <div class="text-center mb-4">
+            <h5>FICHA DE SOLICITAÇÃO DE LICENÇA SANITÁRIA (EVENTO)</h5>
+            <h6>VIGILÂNCIA SANITÁRIA MUNICIPAL</h6>
+        </div>
+
+        <p class="section-title">1. Dados do Solicitante</p>
+        <dl class="row">
+            <dt class="col-sm-4">Protocolo:</dt><dd class="col-sm-8">{{ licenca.protocolo }}</dd>
+            <dt class="col-sm-4">Nome / Razão Social:</dt><dd class="col-sm-8">{{ licenca.solicitante_nome }}</dd>
+            <dt class="col-sm-4">CPF / CNPJ:</dt><dd class="col-sm-8">{{ licenca.solicitante_cpf_cnpj }}</dd>
+            <dt class="col-sm-4">Telefone:</dt><dd class="col-sm-8">{{ licenca.solicitante_telefone }}</dd>
+            <dt class="col-sm-4">E-mail:</dt><dd class="col-sm-8">{{ licenca.solicitante_email }}</dd>
+        </dl>
+
+        <p class="section-title">2. Dados do Evento</p>
+        <dl class="row">
+            <dt class="col-sm-4">Nome do Evento:</dt><dd class="col-sm-8">{{ licenca.nome_evento }}</dd>
+            <dt class="col-sm-4">Tipo de Evento:</dt><dd class="col-sm-8">{{ licenca.tipos_evento or 'Não informado' }}</dd>
+            <dt class="col-sm-4">Local:</dt><dd class="col-sm-8">{{ licenca.local_evento }}</dd>
+            <dt class="col-sm-4">Período:</dt><dd class="col-sm-8">{{ licenca.data_inicio.strftime('%d/%m/%Y') if licenca.data_inicio }} a {{ licenca.data_fim.strftime('%d/%m/%Y') if licenca.data_fim }}</dd>
+        </dl>
+
+        <p class="section-title">3. Estrutura do Evento</p>
+        <dl class="row">
+            <dt class="col-sm-6">Vai vender bebidas?</dt><dd class="col-sm-6">{{ 'Sim' if licenca.vende_bebidas == 'sim' else 'Não' }}</dd>
+            {% if licenca.vende_bebidas == 'sim' %}
+                <dt class="col-sm-6 sub-item">Tipo de casco:</dt><dd class="col-sm-6">{{ licenca.tipo_casco|capitalize or 'Não informado' }}</dd>
+            {% endif %}
+
+            <dt class="col-sm-6">Utiliza estrutura montável?</dt><dd class="col-sm-6">{{ 'Sim' if licenca.usa_estrutura_montavel == 'sim' else 'Não' }}</dd>
+            
+            <dt class="col-sm-6">Utiliza churrasqueira?</dt><dd class="col-sm-6">{{ 'Sim' if licenca.usa_churrasqueira == 'sim' else 'Não' }}</dd>
+            {% if licenca.usa_churrasqueira == 'sim' %}
+                <dt class="col-sm-6 sub-item">Tipo:</dt><dd class="col-sm-6">{{ licenca.churrasqueira_tipo|capitalize or 'Não informado' }}</dd>
+                {% if licenca.churrasqueira_tipo == 'gas' %}
+                    <dt class="col-sm-6 sub-item">Validade do gás:</dt><dd class="col-sm-6">{{ 'Sim' if licenca.churrasqueira_gas_validade == 'sim' else 'Não' }}</dd>
+                {% endif %}
+            {% endif %}
+
+            <dt class="col-sm-6">Utiliza fritadeira a gás?</dt><dd class="col-sm-6">{{ 'Sim' if licenca.usa_fritadeira == 'sim' else 'Não' }}</dd>
+             {% if licenca.usa_fritadeira == 'sim' %}
+                <dt class="col-sm-6 sub-item">Validade do gás:</dt><dd class="col-sm-6">{{ 'Sim' if licenca.fritadeira_gas_validade == 'sim' else 'Não' }}</dd>
+            {% endif %}
+
+            <dt class="col-sm-6">Manipula alimentos?</dt><dd class="col-sm-6">{{ 'Sim' if licenca.manipula_alimentos == 'sim' else 'Não' }}</dd>
+            {% if licenca.manipula_alimentos == 'sim' %}
+                <dt class="col-sm-6 sub-item">Tem pia para lavagem?</dt><dd class="col-sm-6">{{ 'Sim' if licenca.tem_pia == 'sim' else 'Não' }}</dd>
+            {% endif %}
+        </dl>
+
+        <p class="section-title">4. Liberação do Corpo de Bombeiros</p>
+        <dl class="row">
+            <dt class="col-sm-4">Tem liberação?</dt><dd class="col-sm-8">{{ 'Sim' if licenca.bombeiros_liberacao == 'sim' else 'Não' }}</dd>
+            {% if licenca.bombeiros_liberacao == 'sim' %}
+                <dt class="col-sm-4">Nº da Autorização:</dt><dd class="col-sm-8">{{ licenca.bombeiros_numero or 'Não informado' }}</dd>
+                <dt class="col-sm-4">Data de Emissão:</dt><dd class="col-sm-8">{{ licenca.bombeiros_data.strftime('%d/%m/%Y') if licenca.bombeiros_data }}</dd>
+            {% endif %}
+        </dl>
+
+        <p class="section-title">5. Documentos Apresentados</p>
+        <ul>
+            {% set doc_map = {
+                "Cópia do CPF/CNPJ e RG": licenca.doc_cpf_cnpj_path,
+                "Autorização dos Bombeiros": licenca.doc_bombeiros_path,
+                "Cópia do alvará de funcionamento do local": licenca.doc_alvara_local_path,
+                "Autorização da prefeitura para evento em via pública": licenca.doc_autorizacao_rua_path
+            } %}
+            
+            {% set has_docs = false %}
+            {% for label, path in doc_map.items() %}
+                {% if path %}
+                    {% set has_docs = true %}
+                    <li>{{ label }}</li>
+                {% endif %}
+            {% endfor %}
+
+            {% if not has_docs %}
+                <li>Nenhum documento foi anexado.</li>
+            {% endif %}
+        </ul>
+        
+        <div class="text-center mt-5">
+            <p class="small text-muted">Documento gerado pelo sistema VISA Digital em {{ data_geracao }}.</p>
+        </div>
+    </div>
+</body>
+</html>

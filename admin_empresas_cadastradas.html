@@ -1,0 +1,68 @@
+{# NOME DO ARQUIVO: templates/admin_empresas_cadastradas.html #}
+{% extends 'admin_base.html' %}
+
+{% block title %}Empresas Aprovadas{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Empresas Cadastradas</h1>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Voltar ao Dashboard
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('admin_empresas_cadastradas') }}">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="q" placeholder="Buscar por Razão Social ou CNPJ..." value="{{ query_q or '' }}">
+                    <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i></button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Empresas com Cadastro Aprovado</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Protocolo</th> {# <-- COLUNA ADICIONADA #}
+                            <th>Razão Social</th>
+                            <th>CNPJ</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for empresa in empresas %}
+                        <tr>
+                            <td>{{ empresa.protocolo }}</td> {# <-- DADO ADICIONADO #}
+                            <td>{{ empresa.razao_social }}</td>
+                            <td>{{ empresa.cnpj }}</td>
+                            <td>
+                                <span class="badge bg-success">{{ empresa.status }}</span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('admin_ficha_empresa', empresa_id=empresa.id) }}" class="btn btn-sm btn-info">
+                                    Ver Ficha Completa
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center">Nenhuma empresa encontrada.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

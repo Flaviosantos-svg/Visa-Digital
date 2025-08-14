@@ -1,0 +1,97 @@
+{% extends 'admin_base.html' %}
+{% block title %}Analisar Licenças Públicas{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-2 text-gray-800">Analisar Solicitações de Licenças Públicas</h1>
+<p class="mb-4">Gerencie e analise todas as solicitações de licenças para entidades públicas.</p>
+
+<!-- :: INÍCIO DA ALTERAÇÃO :: -->
+<!-- Botões de Filtro e Barra de Busca -->
+<div class="row mb-3 align-items-center">
+    <!-- Filtros de Status -->
+    <div class="col-md-auto">
+        <a href="{{ url_for('admin_listar_licencas_publicas', filtro='pendentes', busca=termo_busca) }}" class="btn btn-{{ 'primary' if filtro_ativo == 'pendentes' else 'outline-secondary' }} btn-sm">
+            Pendentes
+        </a>
+        <a href="{{ url_for('admin_listar_licencas_publicas', filtro='aprovadas', busca=termo_busca) }}" class="btn btn-{{ 'primary' if filtro_ativo == 'aprovadas' else 'outline-secondary' }} btn-sm">
+            Aprovadas
+        </a>
+        <a href="{{ url_for('admin_listar_licencas_publicas', filtro='todas', busca=termo_busca) }}" class="btn btn-{{ 'primary' if filtro_ativo == 'todas' else 'outline-secondary' }} btn-sm">
+            Ver Todas
+        </a>
+    </div>
+    <!-- Barra de Busca -->
+    <div class="col-md-6 ms-auto">
+        <form method="GET" action="{{ url_for('admin_listar_licencas_publicas') }}" class="d-flex">
+            <input type="hidden" name="filtro" value="{{ filtro_ativo }}">
+            <input type="search" name="busca" class="form-control form-control-sm me-2" placeholder="Buscar por CNPJ, Razão Social ou Protocolo..." value="{{ termo_busca or '' }}">
+            <button class="btn btn-sm btn-primary" type="submit"><i class="fas fa-search"></i></button>
+        </form>
+    </div>
+</div>
+<!-- :: FIM DA ALTERAÇÃO :: -->
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">{{ titulo_pagina }}</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>Protocolo</th>
+                        <th>Nome da Unidade</th>
+                        <th>Instituição (CNPJ)</th>
+                        <th>Data da Solicitação</th>
+                        <th>Status</th>
+                        <th class="text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for licenca in licencas %}
+                    <tr>
+                        <td>{{ licenca.protocolo_licencas_publicas or 'N/A' }}</td>
+                        <td>{{ licenca.unidade_nome or 'N/A' }}</td>
+                        <td>
+                            {% if licenca.empresa %}
+                                {{ licenca.empresa.razao_social }} ({{ licenca.empresa.cnpj or 'N/A' }})
+                            {% else %}
+                                <span class="text-danger">Instituição não vinculada</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if licenca.data_solicitacao %}
+                                {{ licenca.data_solicitacao.strftime('%d/%m/%Y') }}
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {# Cores dinâmicas para o status #}
+                            {% set status_lower = licenca.status|lower %}
+                            {% if 'aprovado' in status_lower %}
+                                <span class="badge bg-success">{{ licenca.status }}</span>
+                            {% elif 'reprovado' in status_lower %}
+                                <span class="badge bg-danger">{{ licenca.status }}</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">{{ licenca.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <a href="{{ url_for('admin_detalhe_licenca_publica', licenca_id=licenca.id) }}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-search me-1"></i> Analisar
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center">Nenhuma solicitação encontrada para este filtro.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

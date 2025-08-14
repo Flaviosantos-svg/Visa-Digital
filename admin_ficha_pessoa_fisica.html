@@ -1,0 +1,69 @@
+{% extends 'admin_base.html' %}
+{% block title %}Ficha Cadastral - {{ pessoa.nome_completo }}{% endblock %}
+
+{% block styles %}
+<style>
+    .card-body .dl-horizontal dt { font-weight: 600; }
+    .nav-tabs .nav-link { color: #495057; }
+    .nav-tabs .nav-link.active { color: #0d6efd; border-color: #dee2e6 #dee2e6 #fff; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Ficha Cadastral de Pessoa Física</h1>
+        <div>
+            <!-- BOTÃO ADICIONADO -->
+            <a href="{{ url_for('admin_imprimir_ficha_pessoa_fisica', pessoa_id=pessoa.id) }}" class="btn btn-outline-info" target="_blank">
+                <i class="fas fa-print me-2"></i>Imprimir Ficha
+            </a>
+            <a href="{{ url_for('admin_pessoas_fisicas_aprovadas') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Voltar
+            </a>
+        </div>
+    </div>
+    <!-- Dados Principais -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Dados Principais</h6>
+        </div>
+        <div class="card-body">
+            <dl class="row dl-horizontal">
+                <dt class="col-sm-3">Nome Completo:</dt><dd class="col-sm-9">{{ pessoa.nome_completo }}</dd>
+                <dt class="col-sm-3">CPF:</dt><dd class="col-sm-9">{{ pessoa.cpf }}</dd>
+                <dt class="col-sm-3">Status do Cadastro:</dt><dd class="col-sm-9"><span class="badge bg-success">{{ pessoa.status }}</span></dd>
+                <dt class="col-sm-3">Endereço:</dt><dd class="col-sm-9">{{ pessoa.endereco_local }}</dd>
+                <dt class="col-sm-3">Telefone:</dt><dd class="col-sm-9">{{ pessoa.telefone_contato }}</dd>
+            </dl>
+        </div>
+    </div>
+
+    <!-- Histórico de Processos com Abas -->
+    <div class="card shadow">
+        <div class="card-header">
+            <ul class="nav nav-tabs card-header-tabs" id="processosTab" role="tablist">
+                <li class="nav-item" role="presentation"><button class="nav-link active" id="denuncias-tab" data-bs-toggle="tab" data-bs-target="#denuncias" type="button" role="tab">Denúncias</button></li>
+                <li class="nav-item" role="presentation"><button class="nav-link" id="notificacoes-tab" data-bs-toggle="tab" data-bs-target="#notificacoes" type="button" role="tab">Notificações</button></li>
+                <li class="nav-item" role="presentation"><button class="nav-link" id="vistorias-tab" data-bs-toggle="tab" data-bs-target="#vistorias" type="button" role="tab">Vistorias</button></li>
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="tab-content" id="processosTabContent">
+                <div class="tab-pane fade show active" id="denuncias" role="tabpanel">
+                    <p>Histórico de denúncias vinculadas a este CPF aparecerá aqui.</p>
+                    <!-- Tabela de Denúncias -->
+                </div>
+                <div class="tab-pane fade" id="notificacoes" role="tabpanel">
+                    <p>Histórico de notificações vinculadas a este CPF aparecerá aqui.</p>
+                    <!-- Tabela de Notificações -->
+                </div>
+                <div class="tab-pane fade" id="vistorias" role="tabpanel">
+                    <p>Histórico de vistorias vinculadas a este CPF aparecerá aqui.</p>
+                    <!-- Tabela de Vistorias -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

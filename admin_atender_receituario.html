@@ -1,0 +1,112 @@
+{% extends 'admin_base.html' %}
+
+{% block title %}Atender Solicitação {{ solicitacao.protocolo }} - VISA Digital{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Atender Solicitação de Receituário</h1>
+        <a href="{{ url_for('admin_detalhe_receituario', solicitacao_id=solicitacao.id) }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Voltar para Detalhes
+        </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Solicitação: {{ solicitacao.protocolo }} - {{ solicitacao.nome_local }}</h6>
+        </div>
+        <div class="card-body">
+            <p><strong>Status Atual:</strong> 
+                <span class="badge 
+                    {% if solicitacao.status == 'Pendente' %} bg-warning text-dark
+                    {% elif solicitacao.status == 'Em Análise' %} bg-info
+                    {% elif solicitacao.status == 'Atendida' %} bg-success
+                    {% elif solicitacao.status == 'Recusada' %} bg-danger
+                    {% else %} bg-secondary
+                    {% endif %}">
+                    {{ solicitacao.status }}
+                </span>
+            </p>
+            <p><strong>Receituários Solicitados:</strong></p>
+            <ul class="list-group list-group-flush mb-3">
+                {% for sigla_tipo, quantidade in receituarios_solicitados_parsed.items() %}
+                    {# A chave no receituarios_solicitados_parsed é algo como "A_amarela" ou "C_branca" #}
+                    {# precisamos extrair a sigla "A" ou "C" #}
+                    {% set sigla_base = sigla_tipo.split('_')[0] %} 
+                    {% set tipo_obj = tipos_receituario_map[sigla_base] %} {# O mapa agora usa sigla como chave #}
+
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {% if tipo_obj %}
+                            {{ tipo_obj.nome }}
+                        {% else %}
+                            {{ sigla_tipo | replace('_', ' ') | title }} {# Fallback se o tipo não for encontrado #}
+                        {% endif %}
+                        <span class="badge bg-primary rounded-pill">{{ quantidade }} bloco(s)</span>
+                    </li>
+                {% endfor %}
+            </ul>
+
+            <hr class="my-4">
+
+            <h4>Informações do Atendimento:</h4>
+            <form action="{{ url_for('admin_atender_receituario', solicitacao_id=solicitacao.id) }}" method="POST">
+                <fieldset class="border p-3 mb-4 rounded">
+                    <legend class="w-auto px-2 h6">Dados do Recebedor</legend>
+                    <div class="mb-3">
+                        <label for="nome_recebedor" class="form-label">Nome Completo do Recebedor</label>
+                        <input type="text" class="form-control" id="nome_recebedor" name="nome_recebedor" placeholder="Nome completo de quem receberá os receituários" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="cpf_recebedor" class="form-label">CPF do Recebedor</label>
+                            <input type="text" class="form-control" id="cpf_recebedor" name="cpf_recebedor" placeholder="Ex: 123.456.789-00" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="telefone_recebedor" class="form-label">Telefone do Recebedor</label>
+                            <input type="text" class="form-control" id="telefone_recebedor" name="telefone_recebedor" placeholder="Ex: (DD) 99999-9999">
+                        </div>
+                    </div>
+                </fieldset>
+
+                <fieldset class="border p-3 mb-4 rounded">
+                    <legend class="w-auto px-2 h6">Blocos a Dispensar do Estoque</legend>
+                    <p class="text-muted">Selecione os blocos disponíveis que serão entregues para esta solicitação.</p>
+                    
+                    {# Iterar sobre os blocos disponíveis, agrupando por tipo #}
+                    {% if blocos_disponiveis_agrupados %}
+                        {% for sigla_tipo, blocos_do_tipo in blocos_disponiveis_agrupados.items() %}
+                            {% set tipo_obj = tipos_receituario_map[sigla_tipo] %}
+                            <h6 class="mt-4 mb-2 text-info">{{ tipo_obj.nome }} ({{ tipo_obj.sigla }})</h6>
+                            <div class="list-group mb-3">
+                                {% for bloco in blocos_do_tipo %}
+                                    <label class="list-group-item">
+                                        <input class="form-check-input me-1" type="checkbox" name="blocos_dispensar_ids[]" value="{{ bloco.id }}">
+                                        Bloco: {{ bloco.numero_bloco }} (Folhas: {{ bloco.numero_inicial }}-{{ bloco.numero_final }}) - Entrada: {{ bloco.data_entrada_estoque.strftime('%d/%m/%Y') }} - Status: {{ bloco.status }}
+                                    </label>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-warning">Não há blocos disponíveis para dispensar.</p>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-warning">Nenhum tipo de receituário com blocos disponíveis no estoque.</p>
+                    {% endif %}
+                </fieldset>
+
+                <button type="submit" class="btn btn-success btn-lg">Concluir Atendimento e Dispensar</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

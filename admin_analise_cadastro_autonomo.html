@@ -1,0 +1,108 @@
+{% extends 'admin_base.html' %}
+{% block title %}Analisar Cadastro de Autônomo{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Análise de Cadastro de Autônomo</h1>
+        <a href="{{ url_for('admin_listar_autonomos') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Voltar para a Lista
+        </a>
+    </div>
+
+    <!-- Ações Administrativas -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Ações Administrativas</h6>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('admin_atualizar_status_autonomo', autonomo_id=autonomo.id) }}">
+                <div class="row align-items-end">
+                    <div class="col-md-4">
+                        <p class="mb-1"><strong>Status atual:</strong> 
+                            <span class="badge 
+                                {% if autonomo.status == 'Pendente' %} bg-warning text-dark
+                                {% elif autonomo.status == 'Aprovado' %} bg-success
+                                {% else %} bg-danger
+                                {% endif %}">
+                                {{ autonomo.status }}
+                            </span>
+                        </p>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="novo_status" class="form-label">Mudar status para:</label>
+                        <select class="form-select" name="novo_status" id="novo_status">
+                            <option value="Aprovado">Aprovado</option>
+                            <option value="Reprovado">Reprovado</option>
+                            <option value="Pendente">Pendente</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-success w-100">Salvar Alteração</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dados do Formulário -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">1. Dados Pessoais</h6></div>
+        <div class="card-body"><dl class="row">
+            <dt class="col-sm-3">Protocolo:</dt><dd class="col-sm-9">{{ autonomo.protocolo or 'N/A' }}</dd>
+            <dt class="col-sm-3">Nome Completo:</dt><dd class="col-sm-9">{{ autonomo.nome_completo or 'Não informado' }}</dd>
+            <dt class="col-sm-3">CPF:</dt><dd class="col-sm-9">{{ autonomo.cpf or 'Não informado' }}</dd>
+            <dt class="col-sm-3">RG:</dt><dd class="col-sm-9">{{ autonomo.rg or 'Não informado' }} ({{ autonomo.orgao_expedidor or 'N/A' }}/{{ autonomo.uf_rg or 'N/A' }})</dd>
+            <dt class="col-sm-3">Data de Nascimento:</dt><dd class="col-sm-9">{{ autonomo.data_nascimento.strftime('%d/%m/%Y') if autonomo.data_nascimento else 'Não informado' }}</dd>
+            <dt class="col-sm-3">Sexo:</dt><dd class="col-sm-9">{{ autonomo.sexo or 'Não informado' }}</dd>
+        </dl></div>
+    </div>
+    
+    <div class="card shadow mb-4">
+        <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">2. Contato</h6></div>
+        <div class="card-body"><dl class="row">
+            <dt class="col-sm-3">Telefone Celular:</dt><dd class="col-sm-9">{{ autonomo.telefone_celular or 'Não informado' }}</dd>
+            <dt class="col-sm-3">E-mail:</dt><dd class="col-sm-9">{{ autonomo.email or 'Não informado' }}</dd>
+        </dl></div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">3. Endereço do Local de Atendimento</h6></div>
+        <div class="card-body"><dl class="row">
+            <dt class="col-sm-3">Endereço Completo:</dt><dd class="col-sm-9">{{ autonomo.endereco_atendimento or 'Não informado' }}</dd>
+            <dt class="col-sm-3">Tipo de Local:</dt><dd class="col-sm-9">{{ autonomo.tipo_local or 'Não informado' }}</dd>
+        </dl></div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">4. Dados Profissionais</h6></div>
+        <div class="card-body"><dl class="row">
+            <dt class="col-sm-3">Profissão:</dt><dd class="col-sm-9">{{ autonomo.profissao or 'Não informado' }}</dd>
+            <dt class="col-sm-3">Conselho de Classe:</dt><dd class="col-sm-9">{{ autonomo.conselho_classe or 'Não informado' }}</dd>
+            <dt class="col-sm-3">Nº Registro Profissional:</dt><dd class="col-sm-9">{{ autonomo.numero_registro_profissional or 'Não informado' }}</dd>
+            <dt class="col-sm-3">Inscrição Municipal:</dt><dd class="col-sm-9">{{ autonomo.inscricao_municipal or 'Não informado' }}</dd>
+            <dt class="col-sm-3">Atividades Exercidas:</dt><dd class="col-sm-9">{{ autonomo.atividades_exercidas or 'Não informado' }}</dd>
+            <dt class="col-sm-3">Modalidade:</dt><dd class="col-sm-9">{{ autonomo.modalidade_atendimento or 'Não informado' }}</dd>
+            <dt class="col-sm-3">Horário:</dt><dd class="col-sm-9">{{ autonomo.horario_funcionamento or 'Não informado' }}</dd>
+        </dl></div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">5. Documentação Anexada</h6></div>
+        <div class="card-body">
+            <ul class="list-group">
+                {% for nome_doc, filename in documentos_anexados.items() %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ nome_doc }}
+                        <a href="{{ url_for('static', filename='uploads/' + filename.replace('\\', '/')) }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                            <i class="fas fa-eye me-1"></i> Visualizar
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="list-group-item">Nenhum documento foi anexado.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

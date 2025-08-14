@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório de Denúncia - {{ denuncia.protocolo_denuncia }}</title>
+    <style>
+        /* --- Estilos Gerais --- */
+        @page { size: A4; margin: 2cm; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 11px; line-height: 1.5; }
+        .container { padding: 0; }
+        .header { text-align: center; border-bottom: 2px solid #ccc; padding-bottom: 10px; }
+        .header h1 { margin: 0; color: #333; font-size: 18px; }
+        .header p { margin: 5px 0 0; color: #666; }
+        .section { margin-top: 20px; }
+        .section h2 { background-color: #f2f2f2; padding: 8px; margin: 0 0 10px 0; border-radius: 4px; font-size: 14px; }
+        dl { display: grid; grid-template-columns: 160px auto; gap: 5px 8px; }
+        dt { font-weight: bold; color: #555; }
+        dd { margin: 0; }
+        .despacho { white-space: pre-wrap; padding: 10px; border: 1px solid #eee; background-color: #fafafa; border-radius: 4px; min-height: 80px; }
+        .footer { text-align: center; margin-top: 40px; }
+        .signature { margin-top: 50px; text-align: center; }
+
+        /* --- Estilos para a Galeria de Fotos --- */
+        .page-break { page-break-before: always; }
+        .photo-gallery {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-content: flex-start;
+        }
+        .photo-item {
+            width: 10cm;
+            height: 15cm;
+            border: 1px solid #ccc;
+            margin-bottom: 1cm;
+            padding: 4px;
+            box-sizing: border-box;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* 'contain' evita cortar a imagem */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Relatório de Atendimento de Denúncia</h1>
+            <p>Sistema de Vigilância Sanitária</p>
+        </div>
+
+        <div class="section">
+            <h2>Dados Gerais da Denúncia</h2>
+            <dl>
+                <dt>Protocolo:</dt><dd>{{ denuncia.protocolo_denuncia }}</dd>
+                <dt>Data de Registro:</dt><dd>{{ denuncia.data_denuncia.strftime('%d/%m/%Y às %H:%M') }}</dd>
+            </dl>
+        </div>
+
+        <div class="section">
+            <h2>Informações do Denunciante</h2>
+            <dl>
+                {% if not denuncia.anonimato %}<dt>Nome:</dt><dd>{{ denuncia.denunciante_nome }}</dd><dt>Contato:</dt><dd>{{ denuncia.denunciante_telefone or denuncia.denunciante_email or 'Não informado' }}</dd>{% else %}<dt>Identificação:</dt><dd>Denúncia Anônima</dd>{% endif %}
+            </dl>
+        </div>
+
+        <div class="section">
+            <h2>Informações do Local Denunciado</h2>
+            <dl>
+                <dt>Local:</dt><dd>{{ denuncia.denunciado_nome or 'Não informado' }}</dd>
+                <dt>Endereço:</dt><dd>{{ denuncia.denunciado_rua }}, {{ denuncia.denunciado_numero }} - {{ denuncia.denunciado_bairro }}, {{ denuncia.denunciado_municipio }}</dd>
+                <dt>Descrição do Problema:</dt><dd>{{ denuncia.motivo_descricao }}</dd>
+            </dl>
+        </div>
+
+        <div class="section">
+            <h2>Ações Realizadas pelo Fiscal</h2>
+            <dl>
+                <dt>Status Final:</dt><dd>{{ denuncia.status }}</dd>
+                <dt>Ação Gerada:</dt><dd>{{ denuncia.acao_gerada.replace('_', ' ').title() if denuncia.acao_gerada else 'Nenhuma' }}</dd>
+            </dl>
+            <p style="margin-top: 15px; font-weight: bold; color: #555;">Despacho do Fiscal:</p>
+            <div class="despacho">{{ denuncia.despacho_fiscal or 'Nenhum despacho registrado.' }}</div>
+        </div>
+
+        <div class="signature">
+            <p>_________________________________________</p>
+            <p>Assinatura do Fiscal Responsável</p>
+        </div>
+        
+        {% if fiscal_anexos %}
+            <div class="page-break"></div> <div class="section">
+                <h2>Fotos Anexadas pelo Fiscal</h2>
+                <div class="photo-gallery">
+                    {% for photo_path in fiscal_anexos %}
+                        <div class="photo-item">
+                            <img src="{{ photo_path }}">
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="footer">
+            <p>Relatório gerado em {{ now().strftime('%d/%m/%Y às %H:%M') }}</p>
+        </div>
+    </div>
+</body>
+</html>

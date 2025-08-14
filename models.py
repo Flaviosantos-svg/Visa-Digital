@@ -319,8 +319,6 @@ class LicencasPublicas(db.Model):
     empresa = db.relationship('Empresas', back_populates='licencas_publicas')
 
 
-
-
 class Denuncias(db.Model):
     __tablename__ = 'denuncias'
     id = db.Column(db.Integer, primary_key=True)
@@ -389,6 +387,8 @@ class AutosInfracao(db.Model):
     fiscal_nome = db.Column(db.String)
     anexos_path = db.Column(db.String)
     status = db.Column(db.String, default='Emitido')
+    cpf_vinculado = db.Column(db.String(14))
+
 
 class Vistoria(db.Model):
     __tablename__ = 'vistoria'

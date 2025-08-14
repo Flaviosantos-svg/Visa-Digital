@@ -5,62 +5,99 @@
 <div class="container mt-4">
     <h1 class="mb-4">Registrar Auto de Infração</h1>
 
+    <!-- Busca da empresa -->
     <div class="card shadow mb-4">
         <div class="card-body">
             <form method="POST">
                 <input type="hidden" name="action" value="buscar_empresa">
                 <div class="row align-items-end">
                     <div class="col-md-4">
-                        <label for="cnpj_cpf" class="form-label">CNPJ da Empresa (Opcional)</label>
+                        <label for="cnpj_cpf" class="form-label">CNPJ ou CPF (Opcional)</label>
                         <input type="text" class="form-control" name="cnpj_cpf" id="cnpj_cpf">
                     </div>
                     <div class="col-md-2">
-                        <button type="submit" class="btn btn-secondary w-100">Buscar Empresa</button>
+                        <button type="submit" class="btn btn-secondary w-100">Buscar</button>
                     </div>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Formulário principal -->
     <form method="POST" enctype="multipart/form-data">
         <input type="hidden" name="action" value="salvar_auto">
         <div class="card shadow">
             <div class="card-body">
+
                 {% if empresa %}
                 <div class="alert alert-success">
                     <b>Empresa Vinculada:</b> {{ empresa.razao_social }} (CNPJ: {{ empresa.cnpj }})
                     <input type="hidden" name="empresa_id" value="{{ empresa.id }}">
                 </div>
                 {% endif %}
-                
+
+                <!-- Dados da infração -->
                 <div class="row g-3">
+                    <div class="col-md-3">
+                        <label for="numero_auto" class="form-label">Número do Auto</label>
+                        <input type="text" class="form-control" name="numero_auto" id="numero_auto" value="{{ numero_auto }}" readonly>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="data" class="form-label">Data</label>
+                        <input type="date" class="form-control" name="data" id="data" value="{{ hoje }}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="hora" class="form-label">Hora</label>
+                        <input type="time" class="form-control" name="hora" id="hora" value="{{ agora }}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="local_infracao" class="form-label">Local da Infração</label>
+                        <input type="text" class="form-control" name="local_infracao" id="local_infracao" required>
+                    </div>
+
                     <div class="col-12">
                         <label for="descricao_infracao" class="form-label">Descrição Detalhada da Infração</label>
                         <textarea class="form-control" name="descricao_infracao" id="descricao_infracao" rows="4" required></textarea>
                     </div>
+
                     <div class="col-12">
                         <label for="artigos_infringidos" class="form-label">Artigos Infringidos (Leis, Decretos, etc.)</label>
-                        <input type="text" class="form-control" name="artigos_infringidos" id="artigos_infringidos">
+                        <input type="text" class="form-control" name="artigos_infringidos" id="artigos_infringidos" required>
                     </div>
-                    <div class="col-md-8">
-                        <label for="penalidades_sugeridas" class="form-label">Penalidades Sugeridas</label>
-                        <input type="text" class="form-control" name="penalidades_sugeridas" id="penalidades_sugeridas">
+
+                    <!-- CAMPO DE PROVIDÊNCIAS OCUPANDO MAIS ESPAÇO -->
+                    <div class="col-md-12">
+                        <label for="providencias" class="form-label">Providências</label>
+                        <select class="form-control" name="providencias" id="providencias" required>
+                            <option value="">Selecione...</option>
+                            <option value="Advertência">Advertência</option>
+                            <option value="Interdição Parcial/Total">Interdição Parcial/Total</option>
+                            <option value="Apreensão/Inutilização">Apreensão/Inutilização</option>
+                            <option value="Multa">Multa</option>
+                            <option value="Outra">Outra</option>
+                        </select>
                     </div>
+
                     <div class="col-md-4">
-                        <label for="prazo_defesa_dias" class="form-label">Prazo para Defesa (em dias)</label>
-                        <input type="number" class="form-control" name="prazo_defesa_dias" id="prazo_defesa_dias" value="15">
+                        <label for="prazo_defesa_dias" class="form-label">Prazo para Defesa (dias)</label>
+                        <input type="number" class="form-control" name="prazo_defesa_dias" id="prazo_defesa_dias" value="15" required>
                     </div>
-                     <div class="col-md-6">
+
+                    <div class="col-md-4">
                         <label for="fiscal_nome" class="form-label">Nome do Fiscal</label>
                         <input type="text" class="form-control" name="fiscal_nome" id="fiscal_nome" required>
                     </div>
-                     <div class="col-md-6">
-                        <label for="anexos" class="form-label">Anexos (Fotos, etc.)</label>
+
+                    <div class="col-md-4">
+                        <label for="anexos" class="form-label">Anexos (Fotos, Documentos, etc.)</label>
                         <input type="file" class="form-control" name="anexos" id="anexos" multiple>
                     </div>
                 </div>
+
                 <hr>
-                <button type="submit" class="btn btn-danger">Registrar Auto de Infração</button>
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-danger">Registrar Auto de Infração</button>
+                </div>
             </div>
         </div>
     </form>
